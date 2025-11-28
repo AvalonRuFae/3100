@@ -1,31 +1,39 @@
-This is a fucking project for CSCI3100, some stupid course who uses demon slayer for his project description
+This is a fucking project for CSCI3100, some stupid course who uses demon slayer for his project description:
 
-login in with 3 level of credential:
-- master of demon slaying corp
-- hashira
-- goons
+In a realm where demon slayers fought valiantly against the forces of darkness, the boss of
+the Demon Slayer Corps struggled with managing their software projects, leading to chaotic
+battles and the tragic loss of many brave warriors. Recognizing the dire need for better
+organization, Kei, the CSCI3100 lecturer, and his eager students decided to step in, determined
+to create a robust software project management tool tailored specifically for the Demon Slayers.
+With their combined skills in coding and project management, they envisioned a system that
+would streamline communication, track progress, and allocate resources effectively, ultimately
+empowering the slayers to focus on their true mission: vanquishing demons and protecting
+humanity…
 
-Bounty based project management system
+Thus we would like to make a Bounty based project management system. Basically a kanban board but with a task selection page, consisting task cards which includes its bounty price, task name, content, PIC.
 
-Hashira can create bounties for goons and other hashira to work their life for
+There will be 3 levels of credential:
+- Goons (Junior Programmer)
+    - Can select task cards and join that task
+    - reward penalty for missed deadlines/unfavourable task completion
+    - can view own profile and see their own money, and ongoing tasks
+    - Can change the status of the task
+- Hashira (Senior Programmers)
+    - Access to Goons' functions
+    - can create task bounty
+    - can view their tasks progression
+    - notified when a goon/other senior participate on the task
+- Oyakatasama (Admin) (TBD)
+    - Own the license of the project
+    - Manage Goons/Hashira account (create, edit, delete)
 
-Allow goons to join bounties/quest
-
-Penalty for uncompletetion upon deadline
-
-notify bounty member upon any activity on the bounty
-
-dashboard -- tbd
-
-user have to pay to get the license code to join the demon slaying corp
-
+Mandatory Functional Requirements:
+License system for the software to join the demon slaying corp
+Secure Login System
 database for storing user credentials, bounty details etc, add when needed
 
 planned architecture:
-
 - webapp: react@vite
-
 - HeroUI 
-
 - database: MySQL
 - docker for development

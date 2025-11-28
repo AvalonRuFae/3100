@@ -1,0 +1,154 @@
+@startuml DSCPMS_Architecture_Component_Diagram
+!theme plain
+title Demon Slayer Corps Project Management System - Architecture Component Diagram
+
+package "Presentation Layer" {
+  [Web Browser] as Browser
+  package "React Frontend" {
+    [React Components] as Components
+    [HeroUI Library] as HeroUI
+    [State Management] as StateManager
+    [Routing] as Router
+  }
+}
+
+package "Application Layer" {
+  package "API Gateway" {
+    [Express Server] as ExpressAPI
+    [Authentication Middleware] as AuthMiddleware
+    [CORS Middleware] as CORSMiddleware
+    [Rate Limiter] as RateLimiter
+  }
+  
+  package "Business Services" {
+    [User Service] as UserService
+    [Task Service] as TaskService
+    [Bounty Service] as BountyService
+    [Notification Service] as NotificationService
+    [License Service] as LicenseService
+  }
+}
+
+package "Data Access Layer" {
+  [User Repository] as UserRepo
+  [Task Repository] as TaskRepo
+  [Bounty Repository] as BountyRepo
+  [Notification Repository] as NotifRepo
+  [License Repository] as LicenseRepo
+}
+
+package "Data Layer" {
+  database "MySQL Database" {
+    [Users Table] as UsersDB
+    [Tasks Table] as TasksDB
+    [Bounties Table] as BountiesDB
+    [Notifications Table] as NotificationsDB
+    [Licenses Table] as LicensesDB
+    [Audit Logs Table] as AuditDB
+  }
+}
+
+package "External Dependencies" {
+  [JWT Library] as JWT
+  [Bcrypt Library] as Bcrypt
+  [Date-fns Library] as DateFns
+  [Winston Logger] as Logger
+}
+
+package "Infrastructure" {
+  [Docker Container - Frontend] as DockerFE
+  [Docker Container - Backend] as DockerBE
+  [Docker Container - Database] as DockerDB
+  [Vite Build Tool] as Vite
+  [Node.js Runtime] as NodeJS
+}
+
+' Presentation Layer Connections
+Browser --> Components : HTTP/HTTPS
+Components --> HeroUI : UI Components
+Components --> StateManager : State Updates
+Components --> Router : Navigation
+
+' API Connections
+Components --> ExpressAPI : REST API Calls
+ExpressAPI --> AuthMiddleware : Authentication
+ExpressAPI --> CORSMiddleware : Cross-Origin
+ExpressAPI --> RateLimiter : Request Limiting
+
+' Business Service Connections
+AuthMiddleware --> UserService : User Validation
+ExpressAPI --> UserService : User Operations
+ExpressAPI --> TaskService : Task Operations
+ExpressAPI --> BountyService : Bounty Operations
+ExpressAPI --> NotificationService : Notifications
+ExpressAPI --> LicenseService : License Management
+
+' Data Access Connections
+UserService --> UserRepo : Data Operations
+TaskService --> TaskRepo : Data Operations
+BountyService --> BountyRepo : Data Operations
+NotificationService --> NotifRepo : Data Operations
+LicenseService --> LicenseRepo : Data Operations
+
+' Database Connections
+UserRepo --> UsersDB : SQL Queries
+UserRepo --> LicensesDB : License Queries
+TaskRepo --> TasksDB : SQL Queries
+BountyRepo --> BountiesDB : SQL Queries
+BountyRepo --> AuditDB : Audit Logging
+NotifRepo --> NotificationsDB : SQL Queries
+
+' External Dependencies
+UserService --> JWT : Token Generation
+UserService --> Bcrypt : Password Hashing
+TaskService --> DateFns : Date Calculations
+ExpressAPI --> Logger : Request Logging
+
+' Infrastructure Connections
+Components --> Vite : Build Process
+ExpressAPI --> NodeJS : Runtime
+Components --> DockerFE : Containerization
+ExpressAPI --> DockerBE : Containerization
+UsersDB --> DockerDB : Containerization
+
+' Component Interfaces
+interface "REST API" as RESTAPI
+interface "Database Connection" as DBConn
+interface "Component Props" as ComponentProps
+
+ExpressAPI --> RESTAPI
+UserRepo --> DBConn
+Components --> ComponentProps
+
+note right of Components
+  - User Dashboard
+  - Task Board (Kanban)
+  - Profile Management
+  - Admin Panel
+end note
+
+note right of UserService
+  - Authentication
+  - Profile Management
+  - Role-based Access
+end note
+
+note right of TaskService
+  - Task Creation
+  - Status Updates
+  - Assignment Logic
+end note
+
+note right of BountyService
+  - Reward Processing
+  - Penalty Calculation
+  - Balance Management
+end note
+
+note bottom of "MySQL Database"
+  ACID Compliance
+  Referential Integrity
+  Indexing for Performance
+end note
+
+@enduml

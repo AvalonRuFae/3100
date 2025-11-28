@@ -1,0 +1,718 @@
+# UML Diagrams for Demon Slayer Corps Project Management System
+
+This document contains PlantUML diagrams that visualize the system architecture, component relationships, and user interactions for the DSCPMS.
+
+## Component Diagram - System Architecture
+
+```plantuml
+@startuml DSCPMS_Component_Architecture
+!theme plain
+title Demon Slayer Corps Project Management System - Component Architecture
+
+package "Client Layer" {
+  [Web Browser] as Browser
+  [React Frontend] as Frontend
+  [HeroUI Components] as UI
+  [State Management] as State
+}
+
+package "API Gateway" {
+  [Express.js Server] as API
+  [Authentication Middleware] as Auth
+  [Rate Limiting] as RateLimit
+  [CORS Handler] as CORS
+}
+
+package "Business Logic Layer" {
+  [User Service] as UserSvc
+  [Task Service] as TaskSvc
+  [Bounty Service] as BountySvc
+  [Notification Service] as NotifSvc
+  [Analytics Service] as AnalyticsSvc
+}
+
+package "Data Access Layer" {
+  [User Repository] as UserRepo
+  [Task Repository] as TaskRepo
+  [Notification Repository] as NotifRepo
+  [Audit Repository] as AuditRepo
+}
+
+package "Database Layer" {
+  database "MySQL Database" as DB {
+    [Users Table] as UsersTable
+    [Tasks Table] as TasksTable
+    [Notifications Table] as NotifTable
+    [Audit Logs Table] as AuditTable
+    [Licenses Table] as LicensesTable
+  }
+}
+
+package "External Services" {
+  [JWT Service] as JWT
+  [Bcrypt Service] as Bcrypt
+  [Logger Service] as Logger
+}
+
+package "Infrastructure" {
+  [Docker Container] as Docker
+  [Node.js Runtime] as NodeJS
+  [Vite Build Tool] as Vite
+}
+
+' Client Layer relationships
+Browser --> Frontend : HTTPS/WebSocket
+Frontend --> UI : Component Library
+Frontend --> State : Redux/Context API
+
+' API Gateway relationships
+Frontend --> API : REST API Calls
+API --> Auth : Authentication
+API --> RateLimit : Request Limiting
+API --> CORS : Cross-Origin Handling
+
+' Business Logic relationships
+API --> UserSvc : User Operations
+API --> TaskSvc : Task Management
+API --> BountySvc : Bounty Processing
+API --> NotifSvc : Notifications
+API --> AnalyticsSvc : Analytics
+
+' Data Access relationships
+UserSvc --> UserRepo : Data Access
+TaskSvc --> TaskRepo : Data Access
+NotifSvc --> NotifRepo : Data Access
+BountySvc --> AuditRepo : Audit Logging
+
+' Database relationships
+UserRepo --> UsersTable : CRUD Operations
+TaskRepo --> TasksTable : CRUD Operations
+NotifRepo --> NotifTable : CRUD Operations
+AuditRepo --> AuditTable : CRUD Operations
+UserRepo --> LicensesTable : License Management
+
+' External Services relationships
+Auth --> JWT : Token Generation
+UserSvc --> Bcrypt : Password Hashing
+API --> Logger : Request Logging
+
+' Infrastructure relationships
+Docker --> NodeJS : Runtime Environment
+Docker --> DB : Database Container
+Frontend --> Vite : Build Process
+
+@enduml
+```
+
+## Use Case Diagram - User Interactions
+
+```plantuml
+@startuml DSCPMS_Use_Cases
+!theme plain
+title Demon Slayer Corps Project Management System - Use Cases
+
+left to right direction
+
+actor "Goon\n(Junior Programmer)" as Goon
+actor "Hashira\n(Senior Programmer)" as Hashira
+actor "Oyakatasama\n(Administrator)" as Admin
+
+rectangle "DSCPMS System" {
+  usecase "Login to System" as Login
+  usecase "View Available Tasks" as ViewTasks
+  usecase "Select Task" as SelectTask
+  usecase "Update Task Status" as UpdateStatus
+  usecase "View Profile" as ViewProfile
+  usecase "Check Earnings" as CheckEarnings
+  usecase "View Notifications" as ViewNotif
+  
+  usecase "Create Task Bounty" as CreateTask
+  usecase "Monitor Team Progress" as MonitorTeam
+  usecase "Review Task Completion" as ReviewTask
+  usecase "Manage Task Assignment" as ManageAssign
+  
+  usecase "Manage User Accounts" as ManageUsers
+  usecase "Issue Licenses" as IssueLicense
+  usecase "View System Analytics" as ViewAnalytics
+  usecase "Configure System Settings" as ConfigSystem
+  usecase "Manage Bounty Rules" as ManageBounty
+  usecase "Generate Reports" as GenerateReports
+}
+
+' Goon interactions
+Goon --> Login
+Goon --> ViewTasks
+Goon --> SelectTask
+Goon --> UpdateStatus
+Goon --> ViewProfile
+Goon --> CheckEarnings
+Goon --> ViewNotif
+
+' Hashira interactions (includes all Goon capabilities)
+Hashira --> Login
+Hashira --> ViewTasks
+Hashira --> SelectTask
+Hashira --> UpdateStatus
+Hashira --> ViewProfile
+Hashira --> CheckEarnings
+Hashira --> ViewNotif
+Hashira --> CreateTask
+Hashira --> MonitorTeam
+Hashira --> ReviewTask
+Hashira --> ManageAssign
+
+' Admin interactions (includes all capabilities)
+Admin --> Login
+Admin --> ViewTasks
+Admin --> ViewProfile
+Admin --> ViewNotif
+Admin --> CreateTask
+Admin --> MonitorTeam
+Admin --> ReviewTask
+Admin --> ManageUsers
+Admin --> IssueLicense
+Admin --> ViewAnalytics
+Admin --> ConfigSystem
+Admin --> ManageBounty
+Admin --> GenerateReports
+
+' Relationships
+CreateTask ..> ViewTasks : updates
+SelectTask ..> UpdateStatus : enables
+UpdateStatus ..> ViewNotif : triggers
+ManageUsers ..> IssueLicense : includes
+ReviewTask ..> ManageBounty : affects
+
+@enduml
+```
+
+## Class Diagram - Core Domain Models
+
+```plantuml
+@startuml DSCPMS_Class_Diagram
+!theme plain
+title Demon Slayer Corps Project Management System - Class Diagram
+
+class User {
+  -id: number
+  -username: string
+  -email: string
+  -passwordHash: string
+  -role: UserRole
+  -balance: number
+  -createdAt: Date
+  -updatedAt: Date
+  +login(credentials: LoginCredentials): AuthToken
+  +updateProfile(data: ProfileData): void
+  +checkBalance(): number
+  +getTaskHistory(): Task[]
+}
+
+enum UserRole {
+  GOON
+  HASHIRA
+  OYAKATASAMA
+}
+
+class Task {
+  -id: number
+  -title: string
+  -description: string
+  -bountyAmount: number
+  -deadline: Date
+  -status: TaskStatus
+  -priority: Priority
+  -createdBy: number
+  -assignedTo: number
+  -createdAt: Date
+  -updatedAt: Date
+  +assign(userId: number): void
+  +updateStatus(status: TaskStatus): void
+  +calculatePenalty(): number
+  +isOverdue(): boolean
+}
+
+enum TaskStatus {
+  AVAILABLE
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+class Bounty {
+  -id: number
+  -taskId: number
+  -amount: number
+  -status: BountyStatus
+  -paidAt: Date
+  +process(): void
+  +calculateBonus(): number
+}
+
+enum BountyStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+class Notification {
+  -id: number
+  -userId: number
+  -type: NotificationType
+  -title: string
+  -message: string
+  -readStatus: boolean
+  -createdAt: Date
+  +markAsRead(): void
+  +send(): void
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  DEADLINE_REMINDER
+  TASK_COMPLETED
+  BOUNTY_RECEIVED
+  ACHIEVEMENT_UNLOCKED
+}
+
+class License {
+  -id: number
+  -userId: number
+  -licenseKey: string
+  -expiryDate: Date
+  -status: LicenseStatus
+  -createdAt: Date
+  +isValid(): boolean
+  +renew(): void
+  +revoke(): void
+}
+
+enum LicenseStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+class AuditLog {
+  -id: number
+  -userId: number
+  -action: string
+  -entityType: string
+  -entityId: number
+  -timestamp: Date
+  -details: string
+  +record(action: string, entity: any): void
+}
+
+class ProjectBoard {
+  -id: number
+  -name: string
+  -description: string
+  -tasks: Task[]
+  +addTask(task: Task): void
+  +moveTask(taskId: number, status: TaskStatus): void
+  +getTasksByStatus(status: TaskStatus): Task[]
+}
+
+' Relationships
+User ||--o{ Task : creates
+User ||--o{ Task : assigned_to
+User ||--o{ Bounty : receives
+User ||--o{ Notification : receives
+User ||--|| License : has
+User ||--o{ AuditLog : generates
+
+Task ||--|| Bounty : has
+Task }o--|| ProjectBoard : belongs_to
+
+User }o--|| UserRole : has
+Task }o--|| TaskStatus : has
+Task }o--|| Priority : has
+Bounty }o--|| BountyStatus : has
+Notification }o--|| NotificationType : has
+License }o--|| LicenseStatus : has
+
+@enduml
+```
+
+## Sequence Diagram - Task Assignment Flow
+
+```plantuml
+@startuml DSCPMS_Task_Assignment_Sequence
+!theme plain
+title Task Assignment and Completion Flow
+
+actor "Goon" as G
+participant "Frontend" as F
+participant "API Gateway" as API
+participant "Task Service" as TS
+participant "Notification Service" as NS
+participant "Bounty Service" as BS
+participant "Database" as DB
+
+== Task Selection ==
+G -> F: View available tasks
+F -> API: GET /api/v1/tasks?status=available
+API -> TS: getAvailableTasks()
+TS -> DB: SELECT * FROM tasks WHERE status='available'
+DB --> TS: task list
+TS --> API: available tasks
+API --> F: JSON response
+F --> G: Display task cards
+
+G -> F: Select task
+F -> API: POST /api/v1/tasks/{id}/assign
+API -> TS: assignTask(taskId, userId)
+TS -> DB: UPDATE tasks SET assigned_to=userId, status='in_progress'
+DB --> TS: success
+TS -> NS: notifyTaskAssignment(taskId, userId)
+NS -> DB: INSERT INTO notifications
+TS --> API: assignment confirmation
+API --> F: success response
+F --> G: Task assigned confirmation
+
+== Task Progress Update ==
+G -> F: Update task status
+F -> API: PUT /api/v1/tasks/{id}/status
+API -> TS: updateTaskStatus(taskId, newStatus)
+TS -> DB: UPDATE tasks SET status=newStatus
+DB --> TS: success
+TS -> NS: notifyStatusChange(taskId, newStatus)
+TS --> API: update confirmation
+API --> F: success response
+F --> G: Status updated
+
+== Task Completion ==
+G -> F: Mark task complete
+F -> API: PUT /api/v1/tasks/{id}/complete
+API -> TS: completeTask(taskId)
+TS -> DB: UPDATE tasks SET status='completed'
+TS -> BS: processBounty(taskId, userId)
+BS -> DB: UPDATE users SET balance=balance+bounty
+BS -> DB: INSERT INTO audit_logs
+BS -> NS: notifyBountyAwarded(userId, amount)
+NS -> DB: INSERT INTO notifications
+TS --> API: completion confirmation
+API --> F: success response
+F --> G: Task completed, bounty awarded
+
+@enduml
+```
+
+## Deployment Diagram - Docker Architecture
+
+```plantuml
+@startuml DSCPMS_Deployment_Diagram
+!theme plain
+title Demon Slayer Corps Project Management System - Deployment Architecture
+
+node "Development Environment" {
+  node "Docker Host" as DockerHost {
+    
+    node "Frontend Container" as FrontendContainer {
+      component "React App" as ReactApp
+      component "Vite Dev Server" as ViteServer
+      component "HeroUI Components" as HeroUI
+      artifact "Static Assets" as Assets
+    }
+    
+    node "Backend Container" as BackendContainer {
+      component "Node.js Runtime" as NodeRuntime
+      component "Express.js Server" as ExpressServer
+      component "API Routes" as APIRoutes
+      component "Business Logic" as BusinessLogic
+      component "Authentication Middleware" as AuthMiddleware
+    }
+    
+    node "Database Container" as DBContainer {
+      database "MySQL 8.0" as MySQL {
+        table "users"
+        table "tasks"
+        table "notifications"
+        table "audit_logs"
+        table "licenses"
+      }
+      component "Database Driver" as DBDriver
+    }
+    
+    node "Shared Volumes" as Volumes {
+      artifact "Source Code" as SourceCode
+      artifact "Database Data" as DBData
+      artifact "Logs" as LogFiles
+    }
+  }
+  
+  node "Developer Machine" as DevMachine {
+    component "Code Editor" as CodeEditor
+    component "Git Repository" as Git
+    component "Docker Compose" as DockerCompose
+  }
+}
+
+cloud "External Services" as External {
+  component "npm Registry" as NPMRegistry
+  component "Docker Hub" as DockerHub
+}
+
+' Container relationships
+FrontendContainer --> BackendContainer : HTTP/HTTPS\n(Port 3000 -> 5000)
+BackendContainer --> DBContainer : MySQL Protocol\n(Port 3306)
+FrontendContainer --> Volumes : Mount /app/src
+BackendContainer --> Volumes : Mount /app/src
+DBContainer --> Volumes : Mount /var/lib/mysql
+
+' Development workflow
+DevMachine --> DockerHost : Docker Commands
+CodeEditor --> SourceCode : File System
+Git --> SourceCode : Version Control
+DockerCompose --> FrontendContainer : Orchestration
+DockerCompose --> BackendContainer : Orchestration
+DockerCompose --> DBContainer : Orchestration
+
+' External dependencies
+BackendContainer --> NPMRegistry : Package Dependencies
+DockerHost --> DockerHub : Base Images
+
+' Port mappings
+FrontendContainer : "Port 3000\n(Vite Dev Server)"
+BackendContainer : "Port 5000\n(Express API)"
+DBContainer : "Port 3306\n(MySQL)"
+
+' Environment variables
+FrontendContainer : "VITE_API_URL=http://localhost:5000"
+BackendContainer : "DB_HOST=mysql_container\nDB_PORT=3306\nJWT_SECRET=dev_secret"
+DBContainer : "MYSQL_ROOT_PASSWORD=rootpassword\nMYSQL_DATABASE=dscpms"
+
+@enduml
+```
+
+## Activity Diagram - User Registration Process
+
+```plantuml
+@startuml DSCPMS_User_Registration_Activity
+!theme plain
+title User Registration and Onboarding Process
+
+start
+
+:Administrator logs into system;
+
+:Navigate to User Management;
+
+:Click "Create New User";
+
+:Fill user registration form;
+note right
+  - Username
+  - Email
+  - Initial Password
+  - Role Assignment
+  - License Allocation
+end note
+
+:Submit registration form;
+
+if (Validation successful?) then (yes)
+  :Generate password hash;
+  :Create user record in database;
+  :Generate license key;
+  :Create license record;
+  :Send welcome notification;
+  
+  if (Role is Goon?) then (yes)
+    :Set basic permissions;
+    :Add to Goons group;
+  elseif (Role is Hashira?) then (yes)
+    :Set elevated permissions;
+    :Add to Hashira group;
+  else (Oyakatasama)
+    :Set admin permissions;
+    :Add to Admin group;
+  endif
+  
+  :Log user creation in audit trail;
+  :Display success message;
+  
+else (no)
+  :Display validation errors;
+  :Return to registration form;
+endif
+
+:End registration process;
+
+stop
+
+@enduml
+```
+
+## State Diagram - Task Lifecycle
+
+```plantuml
+@startuml DSCPMS_Task_State_Diagram
+!theme plain
+title Task Lifecycle State Diagram
+
+[*] --> Available : Task created by Hashira
+
+Available --> InProgress : Goon selects task
+Available --> Cancelled : Admin/Hashira cancels
+
+InProgress --> Review : Goon submits for review
+InProgress --> Available : Goon abandons task
+InProgress --> Overdue : Deadline passed
+
+Review --> Completed : Hashira approves
+Review --> InProgress : Hashira requests changes
+Review --> Cancelled : Major issues found
+
+Overdue --> Review : Late submission
+Overdue --> Cancelled : Task abandoned
+Overdue --> InProgress : Extension granted
+
+Completed --> [*] : Final state
+Cancelled --> [*] : Final state
+
+state InProgress {
+  [*] --> Working
+  Working --> Testing : Development complete
+  Testing --> Working : Issues found
+  Testing --> ReadyForReview : All tests pass
+  ReadyForReview --> [*]
+}
+
+state Review {
+  [*] --> PendingReview
+  PendingReview --> UnderReview : Hashira starts review
+  UnderReview --> ChangesRequested : Issues identified
+  UnderReview --> Approved : Review passed
+  ChangesRequested --> [*]
+  Approved --> [*]
+}
+
+note right of Available : Task bounty displayed\nto all eligible Goons
+
+note right of InProgress : Bounty reserved\nfor assigned user
+
+note right of Completed : Bounty awarded\nto user account
+
+note right of Overdue : Penalty may apply\nbased on delay
+
+@enduml
+```
+
+## Database Entity Relationship Diagram
+
+```plantuml
+@startuml DSCPMS_ERD
+!theme plain
+title Database Entity Relationship Diagram
+
+entity "users" as users {
+  * id : INT PRIMARY KEY
+  --
+  * username : VARCHAR(50) UNIQUE
+  * email : VARCHAR(100) UNIQUE
+  * password_hash : VARCHAR(255)
+  * role : ENUM('GOON', 'HASHIRA', 'OYAKATASAMA')
+  * balance : DECIMAL(10,2) DEFAULT 0
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+entity "tasks" as tasks {
+  * id : INT PRIMARY KEY
+  --
+  * title : VARCHAR(100)
+  * description : TEXT
+  * bounty_amount : DECIMAL(8,2)
+  * deadline : DATETIME
+  * status : ENUM('AVAILABLE', 'IN_PROGRESS', 'REVIEW', 'COMPLETED', 'CANCELLED')
+  * priority : ENUM('LOW', 'MEDIUM', 'HIGH')
+  * created_by : INT FOREIGN KEY
+  * assigned_to : INT FOREIGN KEY (nullable)
+  * created_at : TIMESTAMP
+  * updated_at : TIMESTAMP
+}
+
+entity "notifications" as notifications {
+  * id : INT PRIMARY KEY
+  --
+  * user_id : INT FOREIGN KEY
+  * type : ENUM('TASK_ASSIGNED', 'DEADLINE_REMINDER', 'TASK_COMPLETED', 'BOUNTY_RECEIVED')
+  * title : VARCHAR(100)
+  * message : TEXT
+  * read_status : BOOLEAN DEFAULT FALSE
+  * created_at : TIMESTAMP
+}
+
+entity "licenses" as licenses {
+  * id : INT PRIMARY KEY
+  --
+  * user_id : INT FOREIGN KEY
+  * license_key : VARCHAR(100) UNIQUE
+  * expiry_date : DATE
+  * status : ENUM('ACTIVE', 'EXPIRED', 'REVOKED')
+  * created_at : TIMESTAMP
+}
+
+entity "audit_logs" as audit_logs {
+  * id : INT PRIMARY KEY
+  --
+  * user_id : INT FOREIGN KEY
+  * action : VARCHAR(50)
+  * entity_type : VARCHAR(50)
+  * entity_id : INT
+  * timestamp : TIMESTAMP
+  * details : JSON
+}
+
+entity "bounties" as bounties {
+  * id : INT PRIMARY KEY
+  --
+  * task_id : INT FOREIGN KEY
+  * user_id : INT FOREIGN KEY
+  * amount : DECIMAL(8,2)
+  * status : ENUM('PENDING', 'PAID', 'CANCELLED')
+  * paid_at : TIMESTAMP (nullable)
+  * created_at : TIMESTAMP
+}
+
+' Relationships
+users ||--o{ tasks : "created_by"
+users ||--o{ tasks : "assigned_to"
+users ||--o{ notifications : "user_id"
+users ||--|| licenses : "user_id"
+users ||--o{ audit_logs : "user_id"
+users ||--o{ bounties : "user_id"
+tasks ||--|| bounties : "task_id"
+
+@enduml
+```
+
+## How to Use These Diagrams
+
+### Prerequisites
+1. Install PlantUML or use online PlantUML editor
+2. Copy the PlantUML code from each section
+3. Generate the diagrams using PlantUML tools
+
+### Recommended PlantUML Tools
+- **Online Editor**: http://www.plantuml.com/plantuml/uml/
+- **VS Code Extension**: PlantUML extension by jebbs
+- **Command Line**: Download PlantUML JAR file
+- **IntelliJ Plugin**: PlantUML integration plugin
+
+### Usage Instructions
+1. Copy the code between `@startuml` and `@enduml` tags
+2. Paste into your PlantUML editor
+3. Generate PNG/SVG output for documentation
+4. Include generated diagrams in your project presentation
+
+These diagrams provide a comprehensive visual representation of your Demon Slayer Corps Project Management System architecture and will significantly enhance your project documentation for academic evaluation.
