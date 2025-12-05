@@ -184,3 +184,141 @@ export const SearchIcon = (props: IconSvgProps) => (
     />
   </svg>
 );
+
+export const EyeFilledIcon = (props: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path
+      d="M21.25 9.14969C18.94 5.51969 15.56 3.42969 12 3.42969C8.440 3.42969 5.060 5.51969 2.750 9.14969C1.750 10.7197 1.750 13.2697 2.750 14.8397C5.060 18.4797 8.440 20.5597 12 20.5597C15.56 20.5597 18.94 18.4797 21.25 14.8397C22.25 13.2797 22.25 10.7197 21.25 9.14969ZM12 16.0397C9.760 16.0397 7.96 14.2297 7.96 11.9997C7.96 9.76969 9.760 7.95969 12 7.95969C14.24 7.95969 16.04 9.76969 16.04 11.9997C16.04 14.2297 14.24 16.0397 12 16.0397Z"
+      fill="currentColor"
+    />
+    <path
+      d="M11.9984 9.14062C10.4284 9.14062 9.14844 10.4206 9.14844 12.0006C9.14844 13.5706 10.4284 14.8506 11.9984 14.8506C13.5684 14.8506 14.8584 13.5706 14.8584 12.0006C14.8584 10.4306 13.5684 9.14062 11.9984 9.14062Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const EyeSlashFilledIcon = (props: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path
+      d="M21.2714 9.17834C20.9814 8.71834 20.6714 8.28834 20.3514 7.88834C19.9814 7.41834 19.2814 7.37834 18.8114 7.75834L15.8614 10.4483C16.0814 11.2383 15.7814 12.0783 15.1014 12.7083C14.7814 13.0183 14.3614 13.1983 13.9214 13.2283C13.1714 13.2983 12.4814 12.9483 12.0814 12.3583C11.9014 12.0983 11.7914 11.7883 11.7614 11.4583C11.7214 11.0483 11.8014 10.6583 11.9614 10.3083L7.86141 14.1683C7.13141 14.7983 6.85141 15.8683 7.24141 16.7983C8.42141 19.5683 10.1714 21.5583 12.0014 21.5583C13.7814 21.5583 15.5114 19.6183 16.6814 16.8983C17.7414 14.3783 17.8214 11.6083 21.2714 9.17834Z"
+      fill="currentColor"
+    />
+    <path
+      d="M14.0206 9.52L20.9706 3.16C21.3006 2.86 21.2706 2.32 20.9006 2.05C20.5306 1.78 19.9806 1.81 19.6506 2.11L4.93063 15.27C4.60063 15.57 4.63063 16.11 5.00063 16.38C5.18063 16.52 5.40063 16.58 5.61063 16.58C5.83063 16.58 6.05063 16.51 6.22063 16.37L14.0206 9.52Z"
+      fill="currentColor"
+    />
+    <path
+      d="M9.76 5.36C10.46 4.85 11.21 4.43 12 4.25C13.17 3.98 14.37 4.14 15.44 4.68C15.73 4.83 16.11 4.64 16.23 4.34C16.35 4.05 16.16 3.67 15.86 3.55C14.49 2.90 12.97 2.72 11.54 3.05C10.58 3.28 9.67 3.69 8.84 4.26C8.57 4.45 8.50 4.83 8.69 5.10C8.88 5.37 9.26 5.44 9.53 5.25L9.76 5.36Z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const DashboardIcon = (props: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path
+      d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const LogoutIcon = (props: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path
+      d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const UserIcon = (props: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path
+      d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const WalletIcon = (props: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path
+      d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"
+      fill="currentColor"
+    />
+  </svg>
+);
+
+export const TaskIcon = (props: IconSvgProps) => (
+  <svg
+    aria-hidden="true"
+    fill="none"
+    focusable="false"
+    height="1em"
+    role="presentation"
+    viewBox="0 0 24 24"
+    width="1em"
+    {...props}
+  >
+    <path
+      d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"
+      fill="currentColor"
+    />
+  </svg>
+);

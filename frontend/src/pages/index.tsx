@@ -13,28 +13,34 @@ export default function IndexPage() {
     <DefaultLayout>
       <section className="flex flex-col items-center justify-center gap-4 py-8 md:py-10">
         <div className="inline-block max-w-lg text-center justify-center">
-          <span className={title()}>Make&nbsp;</span>
-          <span className={title({ color: "violet" })}>beautiful&nbsp;</span>
+          <span className={title()}>Demon&nbsp;</span>
+          <span className={title({ color: "violet" })}>Slayer&nbsp;</span>
           <br />
           <span className={title()}>
-            websites regardless of your design experience.
+            Corps Project Management System
           </span>
           <div className={subtitle({ class: "mt-4" })}>
-            Beautiful, fast and modern React UI library.
+            Complete bounty-based task management for programming teams. 
+            Join the corps and start earning rewards for your contributions.
           </div>
         </div>
 
         <div className="flex gap-3">
           <Link
-            isExternal
             className={buttonStyles({
               color: "primary",
               radius: "full",
               variant: "shadow",
             })}
-            href={siteConfig.links.docs}
+            href="/login"
           >
-            Documentation
+            Login
+          </Link>
+          <Link
+            className={buttonStyles({ variant: "bordered", radius: "full" })}
+            href="/register"
+          >
+            Join the Corps
           </Link>
           <Link
             isExternal
