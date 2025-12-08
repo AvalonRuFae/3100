@@ -1163,7 +1163,9 @@ DSCPMS Quality Goals
 | **Database Schema Changes Breaking Compatibility** | Medium | High | Use database migration scripts and maintain backward compatibility during transitions. |
 | **Third-party Library Vulnerabilities** | Medium | Medium | Regular dependency updates, security scanning, and minimal external dependencies. |
 
+
 **Risk Monitoring:**
+```
 - Weekly security scans of dependencies
 - Performance monitoring in development environment
 - Code review process for all changes
@@ -1181,7 +1183,7 @@ DSCPMS Quality Goals
     │   └── 70% test coverage with clean architecture
     └── Documentation (Medium Priority)
         └── Complete API and component documentation
-
+```
 ### 10.2. Evaluation Scenarios
 
 **Usability - New User Onboarding**
