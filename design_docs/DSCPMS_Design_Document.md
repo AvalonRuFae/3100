@@ -21,6 +21,7 @@
    - 6.1. [User Authentication Flow](#61-user-authentication-flow)
    - 6.2. [Task Assignment and Completion](#62-task-assignment-and-completion)
    - 6.3. [Notification System Flow](#63-notification-system-flow)
+   - 6.4. [License Validation and Team Access Control](#64-license-validation-and-team-access-control)
 7. [Deployment View](#7-deployment-view)
 8. [Concepts](#8-concepts)
    - 8.1. [Domain Models](#81-domain-models)
@@ -401,6 +402,77 @@ User interaction with DSCPMS involves several key workflows that demonstrate the
 ### 6.3. Notification System Flow
 
 ![alt text](notificationflow.png)
+
+### 6.4. License Validation and Team Access Control
+
+```plantuml
+@startuml DSCPMS_License_Flow
+!theme plain
+title License Validation and Team Access Control Flow
+
+actor "Oyakatasama\n(Admin)" as Admin
+actor "Team Member\n(Goon/Hashira)" as User
+participant "Frontend" as F
+participant "API Gateway" as API
+participant "Auth Middleware" as Auth
+participant "Database" as DB
+
+== License Issuance (Admin) ==
+Admin -> F: Create team with license
+F -> API: POST /api/v1/teams
+API -> Auth: verifyRole(OYAKATASAMA)
+Auth --> API: authorized
+API -> DB: INSERT INTO teams (name, description)
+DB --> API: team_id
+API -> DB: INSERT INTO licenses (team_id, license_key, status='active')
+DB --> API: license created
+API --> F: success response
+F --> Admin: Team and license created
+
+== User Login with License Check ==
+User -> F: Enter credentials
+F -> API: POST /api/v1/auth/login
+API -> DB: SELECT user, team, license WHERE username=?
+DB --> API: user + team + license data
+
+alt License Exists and Active
+    API -> API: generateJWT(user, team, role)
+    API --> F: JWT token
+    F --> User: Access granted
+else No License or Revoked
+    API --> F: 403 Forbidden
+    F --> User: "Team license missing or revoked"
+end
+
+== Feature Access (Automatic Validation) ==
+User -> F: Access any feature
+F -> API: API call with JWT
+API -> Auth: validateJWT(token)
+Auth -> Auth: check token validity
+alt JWT valid
+    Auth --> API: proceed
+    API --> F: feature response
+else JWT invalid
+    Auth --> API: 401 Unauthorized
+    API --> F: error
+    F --> User: "Please login again"
+end
+
+== License Revocation (Admin) ==
+Admin -> F: Revoke team license
+F -> API: PUT /api/v1/licenses/{teamId}/revoke
+API -> Auth: verifyRole(OYAKATASAMA)
+API -> DB: UPDATE licenses SET status='revoked'
+DB --> API: success
+API --> F: revoked
+F --> Admin: License revoked
+note right: Users must re-login to be logged out
+
+@enduml
+```
+
+![alt text](image.png)
+
 ## 7. Deployment View
 
 ![alt text](image.png)
@@ -434,26 +506,226 @@ DSCPMS is built around a clear domain model that represents the core business en
 
 ![alt text](image.png)
 
+```plantuml
+@startuml DSCPMS_Domain_Model
+!theme plain
+title DSCPMS Domain Model - Team-Based Architecture
+
+class Team {
+  -id: number
+  -name: string
+  -description: string
+  -createdAt: Date
+  -updatedAt: Date
+  +hasValidLicense(): boolean
+  +canAddMember(): boolean
+  +getMemberCount(): number
+  +isLicenseExpired(): boolean
+}
+
+class User {
+  -id: number
+  -teamId: number
+  -username: string
+  -email: string
+  -passwordHash: string
+  -role: UserRole
+  -balance: number
+  -createdAt: Date
+  -updatedAt: Date
+  +canCreateTask(): boolean
+  +canAssignTask(): boolean
+  +hasValidTeamLicense(): boolean
+  +calculateTotalEarnings(): number
+  +getTeam(): Team
+}
+
+enum UserRole {
+  GOON
+  HASHIRA
+  OYAKATASAMA
+}
+
+class Task {
+  -id: number
+  -teamId: number
+  -title: string
+  -description: string
+  -bountyAmount: number
+  -deadline: Date
+  -status: TaskStatus
+  -priority: Priority
+  -createdBy: number
+  -assignedTo: number
+  -createdAt: Date
+  -updatedAt: Date
+  +isOverdue(): boolean
+  +canBeAssignedTo(user: User): boolean
+  +calculatePenalty(): number
+  +getTimeRemaining(): Duration
+  +belongsToTeam(teamId: number): boolean
+}
+
+enum TaskStatus {
+  AVAILABLE
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+class Bounty {
+  -id: number
+  -taskId: number
+  -userId: number
+  -amount: number
+  -status: BountyStatus
+  -paidAt: Date
+  +process(): void
+  +calculateBonus(): number
+  +canBePaid(): boolean
+}
+
+enum BountyStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+class License {
+  -id: number
+  -teamId: number
+  -licenseKey: string
+  -status: LicenseStatus
+  -maxUsers: number
+  -expiryDate: Date
+  -createdAt: Date
+  -updatedAt: Date
+  +isValid(): boolean
+  +isExpired(): boolean
+  +canAccommodateUsers(count: number): boolean
+  +renew(): void
+  +revoke(): void
+}
+
+enum LicenseStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+class Notification {
+  -id: number
+  -userId: number
+  -type: NotificationType
+  -title: string
+  -message: string
+  -readStatus: boolean
+  -createdAt: Date
+  +markAsRead(): void
+  +send(): void
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  DEADLINE_REMINDER
+  TASK_COMPLETED
+  BOUNTY_RECEIVED
+  ACHIEVEMENT_UNLOCKED
+  LICENSE_EXPIRING
+  TEAM_INVITATION
+}
+
+class AuditLog {
+  -id: number
+  -userId: number
+  -teamId: number
+  -action: string
+  -entityType: string
+  -entityId: number
+  -timestamp: Date
+  -details: string
+  +record(action: string, entity: any): void
+}
+
+class ProjectBoard {
+  -id: number
+  -teamId: number
+  -name: string
+  -description: string
+  -tasks: Task[]
+  +addTask(task: Task): void
+  +moveTask(taskId: number, status: TaskStatus): void
+  +getTasksByStatus(status: TaskStatus): Task[]
+}
+
+' Team relationships
+Team ||--|| License : has
+Team ||--o{ User : contains
+Team ||--o{ Task : owns
+Team ||--o{ ProjectBoard : manages
+
+' User relationships
+User ||--o{ Task : creates
+User ||--o{ Task : assigned_to
+User ||--o{ Bounty : receives
+User ||--o{ Notification : receives
+User ||--o{ AuditLog : generates
+User }o--|| Team : belongs_to
+
+' Task relationships
+Task ||--|| Bounty : has
+Task }o--|| ProjectBoard : belongs_to
+Task }o--|| Team : belongs_to
+
+' License relationship
+License ||--|| Team : controls_access_for
+
+' Enums
+User }o--|| UserRole : has
+Task }o--|| TaskStatus : has
+Task }o--|| Priority : has
+Bounty }o--|| BountyStatus : has
+Notification }o--|| NotificationType : has
+License }o--|| LicenseStatus : has
+
+@enduml
+```
 
 **Core Domain Entities:**
 
 | Entity | Description | Key Attributes |
 |--------|-------------|----------------|
-| **User** | System users with role-based privileges | username, email, role (Goon/Hashira/Oyakatasama), balance |
-| **Task** | Work items with bounty rewards | title, description, bountyAmount, deadline, status, priority |
+| **Team** | Project teams with shared license | name, licenseKey, memberCount, createdAt |
+| **User** | System users with role-based privileges | username, email, role (Goon/Hashira/Oyakatasama), balance, teamId |
+| **Task** | Work items with bounty rewards | title, description, bountyAmount, deadline, status, priority, teamId |
 | **Bounty** | Monetary rewards for task completion | amount, status (pending/paid/cancelled), paidAt |
-| **License** | Access control for system usage | licenseKey, status, expiryDate |
+| **License** | Team-based access control | licenseKey, teamId, status, expiryDate, maxUsers |
 | **Notification** | System-generated user notifications | type, message, readStatus, timestamp |
 | **AuditLog** | System activity tracking | userId, action, entityType, timestamp |
 
 **Important Business Methods:**
 
 ```typescript
+class Team {
+  hasValidLicense(): boolean
+  canAddMember(): boolean
+  getMemberCount(): number
+  isLicenseExpired(): boolean
+}
+
 class User {
   canCreateTask(): boolean
   canAssignTask(): boolean  
-  hasValidLicense(): boolean
+  hasValidTeamLicense(): boolean
   calculateTotalEarnings(): number
+  getTeam(): Team
 }
 
 class Task {
@@ -461,12 +733,19 @@ class Task {
   canBeAssignedTo(user: User): boolean
   calculatePenalty(): number
   getTimeRemaining(): Duration
+  belongsToTeam(teamId: number): boolean
 }
 
 class Bounty {
   process(): void
   calculateBonus(): number
   canBePaid(): boolean
+}
+
+class License {
+  isValid(): boolean
+  isExpired(): boolean
+  canAccommodateUsers(count: number): boolean
 }
 ```
 
@@ -477,19 +756,42 @@ DSCPMS uses MySQL 8.0+ for relational data storage with a normalized database sc
 **Database Schema Design:**
 ```sql
 -- Core Tables
+CREATE TABLE teams (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE licenses (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  team_id INT UNIQUE NOT NULL,
+  license_key VARCHAR(255) UNIQUE NOT NULL,
+  status ENUM('active', 'expired', 'revoked') DEFAULT 'active',
+  max_users INT DEFAULT 10,
+  expiry_date DATE NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+);
+
 CREATE TABLE users (
   id INT PRIMARY KEY AUTO_INCREMENT,
+  team_id INT NOT NULL,
   username VARCHAR(50) UNIQUE NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('goon', 'hashira', 'oyakatasama') NOT NULL,
   balance DECIMAL(10,2) DEFAULT 0.00,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE RESTRICT
 );
 
 CREATE TABLE tasks (
   id INT PRIMARY KEY AUTO_INCREMENT,
+  team_id INT NOT NULL,
   title VARCHAR(200) NOT NULL,
   description TEXT NOT NULL,
   bounty_amount DECIMAL(8,2) NOT NULL,
@@ -500,6 +802,7 @@ CREATE TABLE tasks (
   assigned_to INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
   FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (assigned_to) REFERENCES users(id)
 );
