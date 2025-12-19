@@ -42,7 +42,7 @@ const UserLicense = require('../database/connection').sequelize.define('UserLice
   tableName: 'user_licenses',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: false
+  updatedAt: 'updated_at'
 });
 
 User.belongsToMany(License, { through: UserLicense, foreignKey: 'userId' });

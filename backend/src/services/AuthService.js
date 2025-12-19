@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User, License } = require('../models');
+const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 
 class AuthService {
@@ -8,7 +9,7 @@ class AuthService {
       // Check if user already exists
       const existingUser = await User.findOne({
         where: {
-          $or: [
+          [Op.or]: [
             { username: userData.username },
             { email: userData.email }
           ]
@@ -36,15 +37,11 @@ class AuthService {
       // Find user by username or email
       const user = await User.findOne({
         where: {
-          $or: [
+          [Op.or]: [
             { username: username },
             { email: username }
           ]
-        },
-        include: [{
-          model: License,
-          through: { attributes: [] }
-        }]
+        }
       });
 
       if (!user) {
