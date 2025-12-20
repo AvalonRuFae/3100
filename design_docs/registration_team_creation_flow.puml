@@ -1,0 +1,128 @@
+@startuml User Registration and Team Creation Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+skinparam sequenceMessageAlign center
+
+actor User
+participant "Frontend" as FE
+participant "API Gateway" as API
+participant "Auth Service" as Auth
+participant "License Service" as License
+participant "Team Service" as Team
+database "Database" as DB
+
+== User Registration ==
+User -> FE: Access registration page
+FE -> User: Display form\n(username, email, password, role)
+
+User -> FE: Submit registration\n(Goon/Hashira/Oyakatasama)
+FE -> API: POST /api/v1/auth/register\n{username, email, password, role}
+
+API -> API: Validate input format & length
+API -> DB: Check username/email uniqueness
+DB --> API: Unique check result
+
+alt Username/Email Already Exists
+    API --> FE: 400 Bad Request\n"Username or email already exists"
+    FE -> User: Show error message
+else Unique Credentials
+    API -> Auth: hashPassword(password)
+    Auth -> Auth: bcrypt.hash(password, saltRounds=10)
+    Auth --> API: password_hash
+    
+    API -> DB: INSERT INTO users\n(username, email, password_hash, role, team_id=NULL)
+    DB --> API: User created (id)
+    
+    API --> FE: 201 Created {message: "Registration successful"}
+    FE -> User: Show success message\nRedirect to login
+end
+
+== User Login (No Team) ==
+User -> FE: Enter credentials
+FE -> API: POST /api/v1/auth/login\n{username, password}
+API -> DB: SELECT * FROM users WHERE username = ?
+DB --> API: User data (team_id = NULL)
+
+API -> Auth: verifyPassword(password, hash)
+Auth -> Auth: bcrypt.compare()
+Auth --> API: Password valid
+
+API -> Auth: generateJWT(user_id, role, teamless_flag=true)
+Auth --> API: JWT token
+
+API --> FE: 200 OK {token, user, no_team: true}
+FE -> FE: Store token in localStorage
+FE -> User: Redirect to Team Creation Panel
+
+== Team Creation Panel ==
+User -> FE: View team creation panel
+FE -> User: Display form\n(team name, license key)
+
+User -> FE: Submit team creation\n{teamName, licenseKey}
+FE -> API: POST /api/v1/teams/create\nAuthorization: Bearer <token>\n{teamName, licenseKey}
+
+API -> Auth: verifyJWT(token)
+Auth --> API: User data (user_id, role)
+
+API -> License: validateLicense(licenseKey)
+License -> License: Load from environment config
+License -> License: Check if license exists
+
+alt License Not Found
+    License --> API: License not found
+    API --> FE: 400 Bad Request\n"Invalid license key"
+    FE -> User: Show error "Invalid license"
+else License Found
+    License -> DB: SELECT * FROM licenses\nWHERE license_key = ?
+    DB --> License: Check if already assigned
+    
+    alt License Already Assigned
+        License --> API: License in use
+        API --> FE: 400 Bad Request\n"License already assigned"
+        FE -> User: Show error "License in use"
+    else License Not Assigned
+        License -> License: Check if not expired
+        
+        alt License Expired
+            License --> API: License expired
+            API --> FE: 400 Bad Request\n"License expired"
+            FE -> User: Show error "License expired"
+        else License Valid
+            License --> API: License valid\n{max_users, expiry_date}
+            
+            API -> DB: BEGIN TRANSACTION
+            
+            API -> Team: createTeam(teamName)
+            Team -> DB: INSERT INTO teams (name)
+            DB --> Team: team_id
+            
+            Team -> DB: INSERT INTO licenses\n(team_id, license_key, max_users, expiry_date)
+            DB --> Team: License created
+            
+            Team -> DB: UPDATE users\nSET team_id = ?\nWHERE id = ?
+            DB --> Team: User updated
+            
+            API -> DB: COMMIT TRANSACTION
+            DB --> API: Transaction successful
+            
+            API -> Auth: generateJWT(user_id, role, team_id)
+            Auth --> API: New JWT with team info
+            
+            API --> FE: 200 OK\n{token, team, message: "Team created"}
+            FE -> FE: Update token in localStorage
+            FE -> User: Redirect to Dashboard
+        end
+    end
+end
+
+== Additional Team Members Join ==
+note over User, DB
+For Goons/Hashira joining existing team:
+1. They register with role selection (team_id = NULL)
+2. Oyakatasama creates/invites them via user management panel
+3. Admin assigns them to existing team (UPDATE users SET team_id = ?)
+4. They login and are redirected to dashboard directly
+end note
+
+@enduml

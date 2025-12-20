@@ -146,4 +146,47 @@ The system shall notify users of achievements such as:
 - Performance improvements
 - Role promotions
 
+Team Creation and License Activation
+------------------------------------
+
+### Description and Priority
+**Priority: High** - Critical for initial team deployment and license activation
+
+This feature manages the creation of new teams and associates them with valid license keys, enabling Oyakatasama users to establish their team environment and gain access to system features.
+
+### Stimulus/Response Sequences
+1. Oyakatasama registers account through registration interface
+2. Oyakatasama logs in → System detects no team assignment
+3. System redirects to team creation panel
+4. Oyakatasama enters team name and license key → System validates license
+5. If valid → Team created and Oyakatasama assigned to team
+6. If invalid → Error message displayed, retry allowed
+
+### Functional Requirements
+
+#### REQ-17: Registration Interface
+The system shall allow users to register with role selection (Goon, Hashira, or Oyakatasama) through a unified registration interface.
+
+#### REQ-18: Team Creation Panel
+The system shall redirect users without team assignment to a team creation panel upon login where they can:
+- Enter team name
+- Enter license key
+- Submit to create and join team
+
+#### REQ-19: License Validation
+The system shall validate entered license keys against hard-coded valid licenses by:
+- Checking if license key exists in system configuration
+- Checking if license is not already assigned to another team
+- Checking if license has not expired
+- Verifying license has available user capacity
+
+#### REQ-20: Team Assignment
+Upon successful license validation, the system shall:
+- Create new team entity with provided name
+- Assign validated license to the team
+- Add the Oyakatasama user to the team
+- Grant full access to system features
+
+
+
 
