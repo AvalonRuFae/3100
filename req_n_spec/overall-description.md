@@ -48,7 +48,7 @@ The DSCPMS provides the following major functions:
 - Hierarchical user role administration
 
 **Notification System:**
-- Real-time notifications for task assignments
+- Regular notifications for task assignments
 - Deadline reminders and status updates
 - Achievement and reward notifications
 

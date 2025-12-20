@@ -123,7 +123,7 @@ Notification System
 ### Description and Priority
 **Priority: Medium** - Important for user engagement and communication
 
-This feature provides real-time notifications for task assignments, deadlines, and system events.
+This feature provides regular notifications for task assignments, deadlines, and system events.
 
 ### Stimulus/Response Sequences
 1. Task assigned to user → System sends notification to user
@@ -139,12 +139,4 @@ The system shall notify users when:
 - Task deadlines are approaching (24 hours before)
 - Task status is updated by team members
 - Tasks are completed or cancelled
-
-#### REQ-16: Achievement Notifications
-The system shall notify users of achievements such as:
-- First task completion
-- Earning milestones
-- Performance improvements
-- Role promotions
-
 

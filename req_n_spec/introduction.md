@@ -23,7 +23,6 @@ This SRS is intended for the following audiences:
 - **Project Managers**: Should review Section 2 (Overall Description) and Section 6 (Other Requirements) for project scope and constraints
 - **Quality Assurance Testers**: Should concentrate on Section 3 for functional requirements and Section 5 for non-functional requirements
 - **End Users**: Should review Section 2 for system overview and user role descriptions
-- **Course Instructors**: Should examine all sections to evaluate project completeness and feasibility
 
 The document is organized to provide a high-level overview first, followed by detailed technical specifications. Readers are recommended to start with Section 2 (Overall Description) before proceeding to their area-specific sections.
 

@@ -36,11 +36,7 @@ The DSCPMS shall provide a responsive web-based user interface built with React 
 - Task completion history with filtering options
 
 **Color Scheme:**
-- Primary: Demon Slayer-inspired dark purple (#4A154B)
-- Secondary: Gold accent (#FFD700) for bounties and achievements
-- Success: Green (#28A745) for completed tasks
-- Warning: Orange (#FFC107) for approaching deadlines
-- Danger: Red (#DC3545) for overdue tasks and penalties
+- Using Hero UI's default color scheme
 
 Hardware Interfaces
 -------------------
@@ -129,8 +125,8 @@ PUT    /api/v1/tasks/{id}/status   - Update task status
 GET    /api/v1/notifications       - Get user notifications
 ```
 
-**Real-time Communication (Future Enhancement):**
-- WebSocket support for real-time notifications
+**Regular Communication (Future Enhancement):**
+- HTTP polling for regular notifications
 - Server-Sent Events for live dashboard updates
 - Push notification capability for mobile browsers
 

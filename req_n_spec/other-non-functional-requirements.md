@@ -13,7 +13,7 @@ Performance Requirements
 **Throughput Requirements:**
 - Concurrent users: System must support up to 50 concurrent users (suitable for undergraduate project scope)
 - Task operations: System must handle 100 task status updates per minute
-- Notification delivery: Real-time notifications must be delivered within 5 seconds
+- Notification delivery: Regular notifications must be delivered within 30 seconds
 
 **Scalability Requirements:**
 - User capacity: System designed to handle up to 200 registered users

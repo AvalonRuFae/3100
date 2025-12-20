@@ -83,12 +83,9 @@ The following table contains the most important personas for this application:
 
 | Stakeholder | Interest/Role |
 |-------------|---------------|
-| **Students** | Primary developers learning modern web development with React, Node.js, and database design |
 | **Junior Programmers (Goons)** | End users seeking task opportunities with monetary incentives and skill development |
 | **Senior Programmers (Hashira)** | Team leads managing projects and creating task assignments with appropriate bounties |
 | **Administrators (Oyakatasama)** | System administrators controlling access, licenses, and overall system configuration |
-| **Course Instructors** | Evaluating project architecture, implementation quality, and adherence to requirements |
-| **Project Stakeholders** | Interested in system adoption for real-world project management scenarios |
 
 ## 2. Architecture Constraints
 
@@ -104,7 +101,7 @@ The constraints on this project are reflected in the final solution. This sectio
 | TC3 | Node.js Backend | Backend implementation must use Node.js to enable full-stack JavaScript development |
 | TC4 | Open Source Dependencies | All third-party libraries must be available under compatible open source licenses |
 | **Database Constraints** |
-| TC5 | MySQL Database | System must use MySQL 8.0+ for data persistence to meet course requirements |
+| TC5 | MySQL Database | System must use MySQL 8.0+ for data persistence|
 | TC6 | Relational Data Model | Database design must follow normalized relational principles |
 | **Deployment Constraints** |
 | TC7 | Docker Containerization | Application must be containerized using Docker for consistent deployment |
@@ -114,7 +111,7 @@ The constraints on this project are reflected in the final solution. This sectio
 
 | ID | Constraint | Description |
 |----|------------|-------------|
-| OC1 | Team | 3-4 student developers working collaboratively |
+| OC1 | Team | 5 student developers working collaboratively |
 | OC2 | Time Schedule | One academic semester (approximately 12-16 weeks) development timeline |
 | OC3 | Version Control | Git repository with collaborative branching strategy and comprehensive commit history |
 | OC4 | Documentation | Complete technical documentation including API specifications and user guides |
@@ -153,9 +150,6 @@ Experienced developers who create and manage tasks, set bounty amounts, and moni
 
 **Oyakatasama (System Administrators)**
 System administrators responsible for user account management, license distribution, system configuration, and overall platform oversight. They have full access to all system functions.
-
-**Course Instructors**
-Academic stakeholders who evaluate the system's design, implementation quality, and educational value. They may also use the system for managing course-related programming assignments.
 
 ### 3.2. Technical Context
 
@@ -1227,7 +1221,6 @@ Choose appropriate technologies for a web-based project management application t
 
 **Constraints:**
 - Must use modern web technologies suitable for academic project
-- Should provide good learning opportunities for students
 - Must support role-based access control and real-time features
 - Need to complete within one academic semester
 
@@ -1238,7 +1231,6 @@ Choose appropriate technologies for a web-based project management application t
 
 **Decision:**
 Chose React + Node.js + MySQL stack because:
-- **Full JavaScript Stack**: Enables students to focus on application logic rather than context switching between languages
 - **React Ecosystem**: Large community, excellent documentation, and extensive learning resources
 - **Express.js**: Lightweight, flexible, and well-suited for RESTful API development
 - **MySQL**: Familiar relational database with excellent performance characteristics
@@ -1280,7 +1272,6 @@ Selected JWT-based authentication because:
 - **Stateless**: Scales better and simplifies server deployment
 - **Self-contained**: Tokens include user role and permissions for efficient authorization
 - **Mobile-ready**: Easy to implement in future mobile applications
-- **Learning value**: Students gain experience with modern authentication patterns
 
 **Implementation Details:**
 ```javascript
