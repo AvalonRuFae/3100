@@ -55,7 +55,7 @@ The main purpose of DSCPMS is to provide a gamified project management platform 
 - **Role-based User Management**: Three distinct user roles (Goons, Hashira, Oyakatasama) with escalating privileges
 - **Bounty-based Task System**: Tasks with monetary rewards to incentivize completion
 - **Kanban Board Interface**: Visual task management with drag-and-drop functionality
-- **Real-time Notifications**: Instant updates on task assignments, completions, and deadlines
+- **Regular Notifications**: Regular updates on task assignments, completions, and deadlines
 - **License Management**: Controlled access through license-based authorization
 - **Analytics and Reporting**: Performance metrics and progress tracking
 - **Deadline Management**: Automated penalty system for missed deadlines
@@ -87,8 +87,7 @@ The following table contains the most important personas for this application:
 | **Junior Programmers (Goons)** | End users seeking task opportunities with monetary incentives and skill development |
 | **Senior Programmers (Hashira)** | Team leads managing projects and creating task assignments with appropriate bounties |
 | **Administrators (Oyakatasama)** | System administrators controlling access, licenses, and overall system configuration |
-| **Course Instructors** | Evaluating project architecture, implementation quality, and adherence to requirements |
-| **Project Stakeholders** | Interested in system adoption for real-world project management scenarios |
+
 
 ## 2. Architecture Constraints
 
@@ -104,7 +103,7 @@ The constraints on this project are reflected in the final solution. This sectio
 | TC3 | Node.js Backend | Backend implementation must use Node.js to enable full-stack JavaScript development |
 | TC4 | Open Source Dependencies | All third-party libraries must be available under compatible open source licenses |
 | **Database Constraints** |
-| TC5 | MySQL Database | System must use MySQL 8.0+ for data persistence to meet course requirements |
+| TC5 | MySQL Database | System must use MySQL 8.0+ for data persistence|
 | TC6 | Relational Data Model | Database design must follow normalized relational principles |
 | **Deployment Constraints** |
 | TC7 | Docker Containerization | Application must be containerized using Docker for consistent deployment |
@@ -153,9 +152,6 @@ Experienced developers who create and manage tasks, set bounty amounts, and moni
 
 **Oyakatasama (System Administrators)**
 System administrators responsible for user account management, license distribution, system configuration, and overall platform oversight. They have full access to all system functions.
-
-**Course Instructors**
-Academic stakeholders who evaluate the system's design, implementation quality, and educational value. They may also use the system for managing course-related programming assignments.
 
 ### 3.2. Technical Context
 
@@ -244,13 +240,13 @@ The system is decomposed into layered architecture with clear responsibilities:
 
 #### 5.1.1. Frontend Components (Blackbox)
 
-**Intent/Responsibility**
-The frontend provides an intuitive, responsive web interface for all user interactions with role-based component rendering and real-time updates.
+**Responsibility**
+The frontend provides an intuitive, responsive web interface for all user interactions with role-based component rendering and Regular updates.
 
 **Interfaces**
 - REST API consumption via HTTP/HTTPS
 - Browser local storage for client-side state
-- Real-time updates through API polling
+- Regular updates through API polling
 
 **Files**
 All frontend components are contained within the `frontend/src/` directory structure, organized by feature and component type.
@@ -331,7 +327,7 @@ The backend API is functionally decomposed to separate responsibilities. Each mo
 | **users** | User account management, profile operations, team membership |
 | **tasks** | Task lifecycle management, assignment logic, status tracking |
 | **bounties** | Bounty calculation, payment processing, balance management |
-| **notifications** | Real-time notification generation and delivery, user notification preferences |
+| **notifications** | Regular notification generation and delivery, user notification preferences |
 | **licenses** | Team license validation, expiry checking, access control |
 | **teams** | Team management, member operations, team statistics |
 
@@ -464,7 +460,7 @@ The `bounties` module is contained in `backend/src/bounties/` including BountyCo
 #### 5.5.5. notifications (Blackbox)
 
 **Intent/Responsibility**  
-Generates, stores, and delivers notifications for system events, providing users with real-time updates about tasks, bounties, and team activities.
+Generates, stores, and delivers notifications for system events, providing users with Regular updates about tasks, bounties, and team activities.
 
 **Interfaces:**
 
@@ -1228,7 +1224,7 @@ Choose appropriate technologies for a web-based project management application t
 **Constraints:**
 - Must use modern web technologies suitable for academic project
 - Should provide good learning opportunities for students
-- Must support role-based access control and real-time features
+- Must support role-based access control
 - Need to complete within one academic semester
 
 **Considered Alternatives:**

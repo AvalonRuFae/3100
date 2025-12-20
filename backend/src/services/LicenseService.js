@@ -34,7 +34,8 @@ class LicenseService {
       const where = {};
 
       if (filters.isActive !== undefined) {
-        where.isActive = filters.isActive;
+        // Convert string "true"/"false" to boolean
+        where.isActive = filters.isActive === 'true' || filters.isActive === true;
       }
 
       if (filters.teamName) {

@@ -35,7 +35,7 @@ The system shall enforce the following access levels:
 - **Oyakatasama**: All functions plus user management and system administration
 
 #### REQ-4: License Management
-The system shall implement a license-based access control where only users with valid licenses can access the system. Without a valid license, the entire project shall be limited to creating no more than 3 tasks total.
+The system shall implement a license-based access control where only teams with valid licenses can access the system.
 
 Task Management System
 ----------------------
@@ -85,7 +85,7 @@ User Profile and Reward System
 ------------------------------
 
 ### Description and Priority
-**Priority: Medium** - Important for gamification and user engagement
+**Priority: High** - Important for gamification and user engagement
 
 This feature manages user profiles, tracks earnings, and implements the reward/penalty system.
 
@@ -93,7 +93,7 @@ This feature manages user profiles, tracks earnings, and implements the reward/p
 1. User completes task → System awards bounty to user's account
 2. User misses deadline → System applies penalty from user's account
 3. User views profile → System displays current balance and task history
-4. User achieves milestone → System displays achievement notification
+
 
 ### Functional Requirements
 
@@ -108,7 +108,7 @@ The system shall maintain user profiles containing:
 The system shall automatically credit user accounts with bounty amounts upon successful task completion.
 
 #### REQ-13: Penalty System
-The system shall apply configurable monetary penalties for missed deadlines or unsatisfactory task completion.
+The system shall apply monetary penalties for missed deadlines or unsatisfactory task completion.
 
 #### REQ-14: Performance Tracking
 The system shall track and display user performance metrics including:
@@ -123,13 +123,12 @@ Notification System
 ### Description and Priority
 **Priority: Medium** - Important for user engagement and communication
 
-This feature provides real-time notifications for task assignments, deadlines, and system events.
+This feature provides regular notifications for task assignments, deadlines, and system events.
 
 ### Stimulus/Response Sequences
 1. Task assigned to user → System sends notification to user
 2. Deadline approaching → System sends reminder notification
 3. Task status changed → System notifies relevant stakeholders
-4. User achieves milestone → System sends congratulatory notification
 
 ### Functional Requirements
 
@@ -139,12 +138,5 @@ The system shall notify users when:
 - Task deadlines are approaching (24 hours before)
 - Task status is updated by team members
 - Tasks are completed or cancelled
-
-#### REQ-16: Achievement Notifications
-The system shall notify users of achievements such as:
-- First task completion
-- Earning milestones
-- Performance improvements
-- Role promotions
 
 

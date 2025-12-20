@@ -35,13 +35,6 @@ The DSCPMS shall provide a responsive web-based user interface built with React 
 - Achievement badges and milestones
 - Task completion history with filtering options
 
-**Color Scheme:**
-- Primary: Demon Slayer-inspired dark purple (#4A154B)
-- Secondary: Gold accent (#FFD700) for bounties and achievements
-- Success: Green (#28A745) for completed tasks
-- Warning: Orange (#FFC107) for approaching deadlines
-- Danger: Red (#DC3545) for overdue tasks and penalties
-
 Hardware Interfaces
 -------------------
 As a web-based application, DSCPMS has minimal direct hardware interface requirements:
