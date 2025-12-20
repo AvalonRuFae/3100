@@ -2,87 +2,68 @@
 !theme plain
 skinparam backgroundColor #FFFFFF
 skinparam defaultFontSize 11
-skinparam sequenceMessageAlign center
 
 actor User
 participant "Frontend" as FE
-participant "API Gateway" as API
+participant "API" as API
 participant "Auth Service" as Auth
-participant "License Service" as License
 database "Database" as DB
 
-== Login Request ==
+== Login ==
+
 User -> FE: Enter credentials
-FE -> API: POST /api/v1/auth/login\n{username, password}
-API -> Auth: authenticate(credentials)
-Auth -> DB: SELECT user, team, license\nWHERE username = ?
-DB --> Auth: User data + team info
+FE -> API: POST /api/v1/auth/login
+API -> DB: SELECT user, team, license
+DB --> API: User data
+API -> Auth: bcrypt.compare(password, hash)
 
-Auth -> Auth: bcrypt.compare(password, hash)
-
-alt User Has Team (team_id != NULL)
-    Auth -> License: validateLicense(team_id)
-    License -> DB: SELECT license WHERE team_id = ?
-    DB --> License: License data
-    
-    alt License Valid & Active
-        License --> Auth: License valid
-        Auth -> Auth: Generate JWT\n(user_id, role, team_id)
-        Auth --> API: JWT token + user data
-        API --> FE: 200 OK {token, user, team}
-        FE -> FE: Store token in localStorage
-        FE -> User: Redirect to Dashboard
-    else License Expired/Revoked
-        License --> Auth: License invalid
-        Auth --> API: License error
-        API --> FE: 403 Forbidden\n"License expired or revoked"
-        FE -> User: Show error message
-    end
-    
-else User Has No Team (team_id == NULL)
-    Auth -> Auth: Generate JWT\n(user_id, role, teamless_flag=true)
-    Auth --> API: JWT token + user data
-    API --> FE: 200 OK {token, user, no_team}
-    FE -> FE: Store token in localStorage
+alt User Has No Team
+    Auth --> API: Generate JWT (teamless_flag=true)
+    API --> FE: 200 OK {token, no_team}
     FE -> User: Redirect to Team Creation Panel
+else User Has Team + Valid License
+    Auth --> API: Generate JWT (user, role, team_id)
+    API --> FE: 200 OK {token, user, team}
+    FE -> User: Redirect to Dashboard
+else License Expired/Invalid
+    API --> FE: 403 Forbidden
+    FE -> User: Show error
 end
 
-== Accessing Protected Routes ==
-User -> FE: Navigate to protected page
-FE -> API: GET /api/v1/resource\nAuthorization: Bearer <token>
-API -> Auth: authenticateToken(token)
-Auth -> Auth: Verify JWT signature
-Auth -> Auth: Check expiration (8 hours)
-Auth -> Auth: Decode user_id, role, team_id
+== Protected Route Access ==
 
-alt Token Valid
-    Auth --> API: Decoded user data
-    API -> Auth: authorizeRole(role, required_role)
-    
-    alt Role Authorized
-        Auth --> API: Authorized
-        API -> DB: Fetch resource
-        DB --> API: Resource data
-        API --> FE: 200 OK {resource}
-        FE -> User: Display resource
-    else Role Not Authorized
-        Auth --> API: Forbidden
-        API --> FE: 403 Forbidden
-        FE -> User: Show "Access Denied"
-    end
-    
-else Token Invalid/Expired
-    Auth --> API: Invalid token
+User -> FE: Navigate to protected page
+FE -> API: GET /resource\nAuthorization: Bearer <token>
+API -> Auth: Verify JWT
+
+alt Token Valid + Role Authorized
+    Auth --> API: Authorized
+    API -> DB: Fetch resource (team-filtered)
+    DB --> API: Resource data
+    API --> FE: 200 OK
+    FE -> User: Display resource
+else Invalid/Expired Token
+    Auth --> API: Unauthorized
     API --> FE: 401 Unauthorized
-    FE -> FE: Clear localStorage
-    FE -> FE: Clear user state
     FE -> User: Redirect to Login
+else Role Not Authorized
+    Auth --> API: Forbidden
+    API --> FE: 403 Forbidden
+    FE -> User: Show "Access Denied"
 end
 
 == Logout ==
+
 User -> FE: Click logout
-FE -> FE: Clear token from localStorage
-FE -> FE: Clear user state
-FE -> User: Redirect to Login page
+FE -> FE: Clear localStorage
+FE -> User: Redirect to Login
+
+note over User, DB
+**Key Points:**
+- JWT expires in 8 hours
+- Team check on every login
+- License validation required
+- All queries filtered by team_id
+end note
 
 @enduml

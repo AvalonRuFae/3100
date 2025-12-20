@@ -1,0 +1,75 @@
+@startuml Task Assignment and Completion Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+
+actor User
+participant "Frontend" as FE
+participant "API" as API
+participant "Task Service" as TS
+participant "Bounty Service" as BS
+database "Database" as DB
+
+== Task Creation (Hashira/Oyakatasama Only) ==
+
+User -> FE: Submit task details
+FE -> API: POST /api/v1/tasks
+API -> API: Authorize role (HASHIRA/OYAKATASAMA)
+API -> API: Validate license
+API -> DB: INSERT INTO tasks (team_id, ...)
+DB --> API: Task created
+API -> DB: INSERT INTO bounties
+API -> DB: INSERT notifications (team members)
+API --> FE: 201 Created
+FE -> User: Show success
+
+== Task Assignment ==
+
+User -> FE: Browse available tasks (team-filtered)
+FE -> API: GET /api/v1/tasks/available
+API -> DB: SELECT * WHERE team_id=? AND status='available'
+DB --> API: Tasks list
+API --> FE: 200 OK {tasks}
+FE -> User: Display tasks
+
+User -> FE: Click "Accept Task"
+FE -> API: POST /api/v1/tasks/:id/assign
+API -> TS: Verify task.team_id == user.team_id
+API -> TS: Check status == 'available'
+API -> TS: Check user task limit
+
+alt Validation Passed
+    TS -> DB: UPDATE tasks SET assigned_to=?, status='in_progress'
+    DB --> TS: Updated
+    TS -> DB: INSERT notification (creator)
+    TS --> API: Success
+    API --> FE: 200 OK
+    FE -> User: Show success
+else Validation Failed
+    TS --> API: Error (team mismatch / unavailable / limit)
+    API --> FE: 400/403 Error
+    FE -> User: Show error
+end
+
+== Task Completion ==
+
+User -> FE: Mark task complete
+FE -> API: POST /api/v1/tasks/:id/complete
+API -> TS: Verify ownership & team
+TS -> TS: Calculate bonus/penalty based on deadline
+TS -> DB: UPDATE tasks SET status='completed'
+TS -> BS: processBounty(task_id, bonus, penalty)
+BS -> DB: UPDATE users SET balance = balance + amount
+BS -> DB: UPDATE bounties SET status='paid'
+BS -> DB: INSERT notifications (bounty received)
+BS --> API: Success
+API --> FE: 200 OK {task, bounty}
+FE -> User: Show success, update balance
+
+note over User, DB
+**Team Isolation:**
+All queries: WHERE team_id = user.team_id
+Cross-team access prevented
+end note
+
+@enduml

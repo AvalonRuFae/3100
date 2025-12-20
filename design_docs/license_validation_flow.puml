@@ -1,0 +1,87 @@
+@startuml License Validation and Team Access Control Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+
+participant "Environment\nConfig" as ENV
+participant "License Service" as LS
+participant "API" as API
+actor "User" as User
+database "Database" as DB
+
+== Server Startup ==
+
+ENV -> LS: Load LICENSES from .env
+note right
+LICENSES=[
+  {"key": "RIKUGAN-2024-A", 
+   "max_users": 50, 
+   "expiry": "2025-12-31"},
+  ...
+]
+end note
+LS -> LS: Store in memory
+
+== Team Creation ==
+
+User -> API: POST /teams/create {teamName, licenseKey}
+API -> LS: validateLicense(licenseKey)
+LS -> LS: Check if exists in config
+LS -> DB: Check if already assigned
+
+alt License Valid & Available
+    LS --> API: Valid {max_users, expiry_date}
+    API -> DB: BEGIN TRANSACTION
+    API -> DB: INSERT INTO teams, licenses
+    API -> DB: UPDATE users SET team_id=?
+    API -> DB: COMMIT
+    DB --> API: Success
+    API --> User: 200 OK {team}
+else Invalid/Expired/InUse
+    LS --> API: Error
+    API --> User: 400/403 Error
+end
+
+== Access Control (Every Protected Request) ==
+
+User -> API: Any request with JWT
+API -> API: Extract user_id, team_id from token
+
+alt No Team
+    API --> User: 403 Forbidden
+else Has Team
+    API -> DB: SELECT license WHERE team_id=?
+    DB --> API: License data
+    
+    alt License Valid & Active & Not Expired
+        API -> API: Execute handler (with team_id filter)
+        API -> DB: Query with WHERE team_id=?
+        DB --> API: Team-filtered data
+        API --> User: 200 OK {data}
+    else License Invalid/Expired
+        API --> User: 403 Forbidden
+    end
+end
+
+== License Monitoring ==
+
+loop Daily
+    LS -> DB: SELECT licenses
+    DB --> LS: All licenses
+    LS -> LS: Check expiry dates
+    alt Expired
+        LS -> DB: UPDATE status='expired'
+        LS -> DB: INSERT notifications
+    end
+end
+
+note over ENV, DB
+**Key Points:**
+- Licenses in environment config
+- Not in DB until assigned
+- Validated on EVERY request
+- Team isolation enforced
+- Daily monitoring job
+end note
+
+@enduml
