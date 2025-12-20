@@ -41,7 +41,9 @@ class UserService {
       });
 
       if (!user) {
-        throw new Error('User not found');
+        const error = new Error('User not found');
+        error.status = 404;
+        throw error;
       }
 
       return user;
@@ -122,17 +124,32 @@ class UserService {
     }
   }
 
-  async updateUser(userId, updates) {
+  async updateUser(userId, updates, requestingUser = null) {
     try {
       const user = await User.findByPk(userId);
 
       if (!user) {
-        throw new Error('User not found');
+        const error = new Error('User not found');
+        error.status = 404;
+        throw error;
+      }
+
+      // Authorization check: users can only update themselves unless they're admin
+      if (requestingUser) {
+        const isAdmin = requestingUser.role === 'OYAKATASAMA';
+        const isSelf = requestingUser.id === parseInt(userId);
+        
+        if (!isAdmin && !isSelf) {
+          const error = new Error('You can only update your own profile');
+          error.status = 403;
+          throw error;
+        }
       }
 
       // Don't allow direct password updates through this method
       delete updates.password;
       delete updates.role; // Role changes should be done through admin function
+      delete updates.id; // Never allow id changes
 
       await user.update(updates);
 
@@ -145,12 +162,21 @@ class UserService {
     }
   }
 
-  async deleteUser(userId) {
+  async deleteUser(userId, requestingUser = null) {
     try {
       const user = await User.findByPk(userId);
 
       if (!user) {
-        throw new Error('User not found');
+        const error = new Error('User not found');
+        error.status = 404;
+        throw error;
+      }
+
+      // Prevent users from deleting themselves
+      if (requestingUser && requestingUser.id === parseInt(userId)) {
+        const error = new Error('You cannot delete yourself');
+        error.status = 400;
+        throw error;
       }
 
       // Soft delete - just deactivate

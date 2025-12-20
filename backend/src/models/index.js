@@ -3,6 +3,7 @@ const Task = require('./Task');
 const Notification = require('./Notification');
 const License = require('./License');
 const Transaction = require('./Transaction');
+const Team = require('./Team');
 
 // User - Task relationships
 User.hasMany(Task, { as: 'createdTasks', foreignKey: 'createdBy' });
@@ -48,11 +49,24 @@ const UserLicense = require('../database/connection').sequelize.define('UserLice
 User.belongsToMany(License, { through: UserLicense, foreignKey: 'userId' });
 License.belongsToMany(User, { through: UserLicense, foreignKey: 'licenseId' });
 
+// User - Team: Many-to-One
+User.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
+Team.hasMany(User, { foreignKey: 'teamId', as: 'members' });
+
+// License - Team: One-to-One
+License.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
+Team.hasOne(License, { foreignKey: 'teamId', as: 'license' });
+
+// License - User (assigned): Many-to-One
+License.belongsTo(User, { foreignKey: 'assignedUserId', as: 'assignedUser' });
+User.hasMany(License, { foreignKey: 'assignedUserId', as: 'assignedLicenses' });
+
 module.exports = {
   User,
   Task,
   Notification,
   License,
   Transaction,
+  Team,
   UserLicense
 };

@@ -47,8 +47,16 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // Custom status errors (404, 403, etc.)
+  if (err.status) {
+    return res.status(err.status).json({
+      success: false,
+      message: err.message
+    });
+  }
+
   // Default error
-  res.status(err.status || 500).json({
+  res.status(500).json({
     success: false,
     message: err.message || 'Internal server error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User, License } = require('../models');
+const { User, License, Team } = require('../models');
 const { Op } = require('sequelize');
 const logger = require('../utils/logger');
 
@@ -34,14 +34,27 @@ class AuthService {
 
   async login(username, password) {
     try {
-      // Find user by username or email
+      // Find user by username or email with team info
       const user = await User.findOne({
         where: {
           [Op.or]: [
             { username: username },
             { email: username }
           ]
-        }
+        },
+        include: [
+          {
+            model: Team,
+            as: 'team',
+            include: [
+              {
+                model: License,
+                as: 'license',
+                attributes: ['id', 'licenseKey', 'maxUsers', 'expirationDate', 'isActive']
+              }
+            ]
+          }
+        ]
       });
 
       if (!user) {
@@ -62,14 +75,19 @@ class AuthService {
       user.lastLogin = new Date();
       await user.save();
 
-      // Generate JWT token
+      // Generate JWT token with team info
       const token = this.generateToken(user);
 
       logger.info(`User logged in: ${user.username}`);
 
+      // Check if user has no team
+      const noTeamFlag = user.teamId === null;
+
       return {
         user,
-        token
+        token,
+        noTeamFlag,
+        team: user.team
       };
     } catch (error) {
       logger.error('Login error:', error);
@@ -78,12 +96,22 @@ class AuthService {
   }
 
   generateToken(user) {
+    const payload = {
+      id: user.id,
+      username: user.username,
+      role: user.role
+    };
+
+    // Include team info if user has team
+    if (user.teamId) {
+      payload.teamId = user.teamId;
+      if (user.team) {
+        payload.teamName = user.team.name;
+      }
+    }
+
     return jwt.sign(
-      {
-        id: user.id,
-        username: user.username,
-        role: user.role
-      },
+      payload,
       process.env.JWT_SECRET,
       {
         expiresIn: process.env.JWT_EXPIRES_IN || '8h'

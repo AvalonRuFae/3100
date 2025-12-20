@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --coverage --verbose",
+    "test": "jest --coverage --verbose --runInBand",
     "test:watch": "jest --watch",
     "db:create": "node src/database/createDatabase.js",
     "db:migrate": "node src/database/migrate.js",

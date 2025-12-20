@@ -16,7 +16,16 @@ class UserController {
 
   async getUserById(req, res, next) {
     try {
-      const user = await UserService.getUserById(req.params.id);
+      // Validate ID format
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId) || userId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid user ID format'
+        });
+      }
+
+      const user = await UserService.getUserById(userId);
 
       res.json({
         success: true,
@@ -43,7 +52,7 @@ class UserController {
 
   async updateUser(req, res, next) {
     try {
-      const user = await UserService.updateUser(req.params.id, req.body);
+      const user = await UserService.updateUser(req.params.id, req.body, req.user);
 
       res.json({
         success: true,
@@ -57,7 +66,7 @@ class UserController {
 
   async deleteUser(req, res, next) {
     try {
-      await UserService.deleteUser(req.params.id);
+      await UserService.deleteUser(req.params.id, req.user);
 
       res.json({
         success: true,

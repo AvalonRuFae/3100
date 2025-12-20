@@ -33,6 +33,15 @@ const User = sequelize.define('User', {
     allowNull: false,
     defaultValue: 'GOON'
   },
+  teamId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'team_id',
+    references: {
+      model: 'teams',
+      key: 'id'
+    }
+  },
   balance: {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0.00

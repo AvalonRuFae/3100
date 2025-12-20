@@ -32,6 +32,24 @@ const License = sequelize.define('License', {
     defaultValue: 50,
     field: 'max_users'
   },
+  teamId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'team_id',
+    references: {
+      model: 'teams',
+      key: 'id'
+    }
+  },
+  assignedUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'assigned_user_id',
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
   notes: {
     type: DataTypes.TEXT
   }

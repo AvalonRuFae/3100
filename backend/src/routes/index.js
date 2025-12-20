@@ -7,6 +7,7 @@ const taskRoutes = require('./taskRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const licenseRoutes = require('./licenseRoutes');
 const bountyRoutes = require('./bountyRoutes');
+const teamRoutes = require('./teamRoutes');
 
 // Health check
 router.get('/health', (req, res) => {
@@ -24,5 +25,6 @@ router.use('/tasks', taskRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/licenses', licenseRoutes);
 router.use('/bounties', bountyRoutes);
+router.use('/team', teamRoutes);
 
 module.exports = router;
