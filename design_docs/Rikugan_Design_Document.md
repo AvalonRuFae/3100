@@ -783,20 +783,21 @@ User interaction with Rikugan involves several key workflows that demonstrate th
 
 ### 6.1. User Authentication Flow
 
-![alt text](Auth.png)
+![alt text](auth_flow.png)
 
-### 6.2. User Registration Flow
+### 6.2. User Registration and Team Creation Flow
 
-![alt text](user_registration_flow.png)
+![alt text](user_registration_team_creation_flow.png)
 
 **Registration Flow Key Points:**
-- Only Oyakatasama (administrators) can create new user accounts
-- Username and email uniqueness is enforced at the database level
-- Passwords are hashed using bcrypt before storage
-- Role assignment (Goon, Hashira, Oyakatasama) is done during registration
-- Optional email notification can be sent to new users with their login credentials
-- No self-registration capability for security reasons
-- License is team-based, not assigned per user
+- **Self-Registration:** All users can self-register through registration interface
+- **Role Selection:** Users select their role during registration
+- **Team Assignment:** New users created without team assignment (team_id = NULL)
+- **Team Creation Panel:** Users without teams redirected after login
+- **License Validation:** Keys configured in environment, validated against hard-coded licenses
+- **Team Creation Process:** User enters name + key, system validates, creates team, assigns license, adds user
+- **Security:** Passwords hashed with bcrypt, username/email uniqueness enforced, JWT includes team info after assignment
+- **License Storage:** Hard-coded licenses in config, only saved to database when assigned to team
 
 ### 6.3. Task Assignment and Completion
 
@@ -804,7 +805,7 @@ User interaction with Rikugan involves several key workflows that demonstrate th
 
 ### 6.4. Notification System Flow
 
-![alt text](notificationflow.png)
+![alt text](notification_flow.png)
 
 ### 6.5. License Validation and Team Access Control
 
@@ -922,7 +923,7 @@ CREATE TABLE licenses (
 
 CREATE TABLE users (
   id INT PRIMARY KEY AUTO_INCREMENT,
-  team_id INT NOT NULL,
+  team_id INT NULL,  -- NULL for newly registered users without team
   username VARCHAR(50) UNIQUE NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
