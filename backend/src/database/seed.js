@@ -65,25 +65,65 @@ const seed = async () => {
     });
     logger.info('Created Goon users');
 
-    // Create a license
-    const license = await License.create({
-      teamName: 'Demon Slayer Corps HQ',
-      licenseKey: 'DSCPMS-2024-UNLIMITED-ACCESS',
-      isActive: true,
-      expirationDate: new Date('2025-12-31'),
-      maxUsers: 100,
-      notes: 'Main team license with full access'
-    });
-    logger.info('Created license');
+    // Create licenses from environment variables
+    let licenses = [];
+    try {
+      // Parse licenses from environment variable
+      const licensesEnv = process.env.LICENSES;
+      if (licensesEnv) {
+        const licensesConfig = JSON.parse(licensesEnv);
+        
+        // Create each license from the config
+        for (const licenseConfig of licensesConfig) {
+          const license = await License.create({
+            teamName: licenseConfig.team_name || `Team - ${licenseConfig.key}`,
+            licenseKey: licenseConfig.key,
+            isActive: true,
+            expirationDate: new Date(licenseConfig.expiry_date),
+            maxUsers: licenseConfig.max_users,
+            notes: licenseConfig.notes || 'License created from environment configuration'
+          });
+          licenses.push(license);
+          logger.info(`Created license: ${license.licenseKey}`);
+        }
+      } else {
+        // Fallback: Create a default license if no env variable is set
+        logger.warn('No LICENSES environment variable found, creating default license');
+        const defaultLicense = await License.create({
+          teamName: 'Demon Slayer Corps HQ',
+          licenseKey: 'DSCPMS-2024-UNLIMITED-ACCESS',
+          isActive: true,
+          expirationDate: new Date('2025-12-31'),
+          maxUsers: 100,
+          notes: 'Default team license with full access'
+        });
+        licenses.push(defaultLicense);
+        logger.info('Created default license');
+      }
+    } catch (error) {
+      logger.error('Error parsing LICENSES from environment:', error);
+      // Fallback: Create a default license on error
+      const defaultLicense = await License.create({
+        teamName: 'Demon Slayer Corps HQ',
+        licenseKey: 'DSCPMS-2024-UNLIMITED-ACCESS',
+        isActive: true,
+        expirationDate: new Date('2025-12-31'),
+        maxUsers: 100,
+        notes: 'Default team license with full access'
+      });
+      licenses.push(defaultLicense);
+      logger.info('Created default license due to parsing error');
+    }
 
-    // Assign license to all users
-    await admin.addLicense(license);
-    await hashira1.addLicense(license);
-    await hashira2.addLicense(license);
-    await goon1.addLicense(license);
-    await goon2.addLicense(license);
-    await goon3.addLicense(license);
-    logger.info('Assigned licenses to users');
+    // Assign first license to all users
+    const primaryLicense = licenses[0];
+    await admin.addLicense(primaryLicense);
+    await hashira1.addLicense(primaryLicense);
+    await hashira2.addLicense(primaryLicense);
+    await goon1.addLicense(primaryLicense);
+    await goon2.addLicense(primaryLicense);
+    await goon3.addLicense(primaryLicense);
+    logger.info('Assigned primary license to users');
 
     // Create sample tasks
     const task1 = await Task.create({

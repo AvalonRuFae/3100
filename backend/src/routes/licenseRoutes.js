@@ -1,55 +1,37 @@
 const express = require('express');
 const router = express.Router();
 const LicenseController = require('../controllers/LicenseController');
-const { authenticateToken, authorize } = require('../middleware/auth');
-const { validate, licenseValidation } = require('../middleware/validation');
+const { authenticateToken } = require('../middleware/auth');
+const { validateLicense } = require('../middleware/validateLicense');
 const { body } = require('express-validator');
+const { validate } = require('../middleware/validation');
 
-// All routes require authentication and admin role
-router.use(authenticateToken);
-router.use(authorize('OYAKATASAMA'));
+/**
+ * License Routes
+ * 
+ * Simplified routes aligned with new license flow:
+ * - Licenses configured in environment variables
+ * - Validation happens during team creation
+ * - No manual license CRUD operations
+ */
 
-// Get license statistics
-router.get('/statistics', LicenseController.getLicenseStatistics);
-
-// Get expiring licenses
-router.get('/expiring', LicenseController.checkExpiringLicenses);
-
-// Get all licenses
-router.get('/', LicenseController.getAllLicenses);
-
-// Get license by ID
-router.get('/:id', LicenseController.getLicenseById);
-
-// Create license
-router.post('/',
-  validate(licenseValidation.create),
-  LicenseController.createLicense
+// Validate license key (public endpoint for team creation)
+router.post('/validate',
+  validate([
+    body('licenseKey')
+      .notEmpty()
+      .withMessage('License key is required')
+      .isString()
+      .withMessage('License key must be a string')
+  ]),
+  LicenseController.validateLicenseKey
 );
 
-// Update license
-router.put('/:id', LicenseController.updateLicense);
-
-// Revoke license
-router.put('/:id/revoke', LicenseController.revokeLicense);
-
-// Delete license
-router.delete('/:id', LicenseController.deleteLicense);
-
-// Assign license to user
-router.post('/:id/assign',
-  validate([
-    body('userId').isInt().withMessage('User ID is required')
-  ]),
-  LicenseController.assignLicenseToUser
-);
-
-// Remove license from user
-router.delete('/:id/users',
-  validate([
-    body('userId').isInt().withMessage('User ID is required')
-  ]),
-  LicenseController.removeLicenseFromUser
+// Get current team's license (requires authentication)
+router.get('/me',
+  authenticateToken,
+  validateLicense,
+  LicenseController.getCurrentTeamLicense
 );
 
 module.exports = router;

@@ -1,64 +1,45 @@
 const request = require('supertest');
 const app = require('../src/server');
 const { sequelize } = require('../src/database/connection');
-const { User, License } = require('../src/models');
+const { User, License, Team } = require('../src/models');
 const LicenseService = require('../src/services/LicenseService');
+const { validateLicenseKey } = require('../src/middleware/validateLicense');
 
-describe('License API and Service', () => {
-  let adminToken, hashiraToken, goonToken;
-  let adminUser, hashiraUser, goonUser;
-  let testLicense;
+describe('License API and Service (New Flow)', () => {
+  let userToken, teamUserToken;
+  let userWithoutTeam, userWithTeam;
+  let testTeam, testLicense;
+
+  // Mock environment licenses
+  const MOCK_LICENSES = [
+    { key: 'RIKUGAN-2025-VALID-KEY-A', max_users: 50, expiry_date: '2026-12-31' },
+    { key: 'RIKUGAN-2025-VALID-KEY-B', max_users: 100, expiry_date: '2026-12-31' },
+    { key: 'RIKUGAN-2025-EXPIRED-KEY', max_users: 25, expiry_date: '2020-12-31' }
+  ];
 
   beforeAll(async () => {
     await sequelize.sync({ force: true });
 
-    // Create test users with different roles
-    const adminResponse = await request(app)
+    // Mock environment variable for licenses
+    process.env.LICENSES = JSON.stringify(MOCK_LICENSES);
+
+    // Create a user without team
+    const userResponse = await request(app)
       .post('/api/v1/auth/register')
       .send({
-        username: 'admin',
-        email: 'admin@test.com',
+        username: 'noTeamUser',
+        email: 'noteam@test.com',
         password: 'Test123!',
         role: 'OYAKATASAMA'
       });
 
-    const hashiraResponse = await request(app)
-      .post('/api/v1/auth/register')
-      .send({
-        username: 'hashira',
-        email: 'hashira@test.com',
-        password: 'Test123!',
-        role: 'HASHIRA'
-      });
+    userWithoutTeam = userResponse.body.data;
 
-    const goonResponse = await request(app)
-      .post('/api/v1/auth/register')
-      .send({
-        username: 'goon',
-        email: 'goon@test.com',
-        password: 'Test123!',
-        role: 'GOON'
-      });
-
-    adminUser = adminResponse.body.data;
-    hashiraUser = hashiraResponse.body.data;
-    goonUser = goonResponse.body.data;
-
-    // Login to get tokens
-    const adminLogin = await request(app)
+    // Login to get token
+    const loginResponse = await request(app)
       .post('/api/v1/auth/login')
-      .send({ username: 'admin', password: 'Test123!' });
-    adminToken = adminLogin.body.data.token;
-
-    const hashiraLogin = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ username: 'hashira', password: 'Test123!' });
-    hashiraToken = hashiraLogin.body.data.token;
-
-    const goonLogin = await request(app)
-      .post('/api/v1/auth/login')
-      .send({ username: 'goon', password: 'Test123!' });
-    goonToken = goonLogin.body.data.token;
+      .send({ username: 'noTeamUser', password: 'Test123!' });
+    userToken = loginResponse.body.data.token;
   });
 
   afterAll(async () => {
@@ -71,1069 +52,915 @@ describe('License API and Service', () => {
   });
 
   describe('License Service', () => {
-    describe('createLicense', () => {
+    describe('validateForTeamCreation', () => {
       /**
-       * Test: Verify license creation with auto-generated key
-       * Purpose: Ensures that a license can be created with team name and that
-       * a license key is automatically generated in the correct format (DSCPMS-YEAR-RANDOM)
+       * Test: Verify valid license key validation for team creation
+       * Purpose: Tests that a valid license key from environment config can be validated
        */
-      test('should create license with auto-generated key', async () => {
-        const licenseData = {
-          teamName: 'Test Team',
-          maxUsers: 10,
+      test('should validate correct license key from environment', async () => {
+        const result = await LicenseService.validateForTeamCreation('RIKUGAN-2025-VALID-KEY-A');
+
+        expect(result.valid).toBe(true);
+        expect(result.config).toBeDefined();
+        expect(result.config.maxUsers).toBe(50);
+        expect(result.config.key).toBe('RIKUGAN-2025-VALID-KEY-A');
+      });
+
+      /**
+       * Test: Verify invalid license key is rejected
+       * Purpose: Tests that a license key not in environment config is rejected
+       */
+      test('should reject invalid license key', async () => {
+        const result = await LicenseService.validateForTeamCreation('INVALID-KEY-12345');
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe('Invalid or expired license key');
+      });
+
+      /**
+       * Test: Verify expired license key is rejected
+       * Purpose: Tests that an expired license from environment config is rejected
+       */
+      test('should reject expired license key', async () => {
+        const result = await LicenseService.validateForTeamCreation('RIKUGAN-2025-EXPIRED-KEY');
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe('Invalid or expired license key');
+      });
+
+      /**
+       * Test: Verify already assigned license key is rejected
+       * Purpose: Tests that a license key already assigned to another team is rejected
+       */
+      test('should reject already assigned license key', async () => {
+        // Create a license record (simulating assignment to a team)
+        await License.create({
+          teamId: 1,
+          teamName: 'Existing Team',
+          licenseKey: 'RIKUGAN-2025-VALID-KEY-B',
+          maxUsers: 100,
+          expirationDate: new Date('2026-12-31'),
           isActive: true
+        });
+
+        const result = await LicenseService.validateForTeamCreation('RIKUGAN-2025-VALID-KEY-B');
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe('License key is already assigned to another team');
+      });
+    });
+
+    describe('createLicenseForTeam', () => {
+      /**
+       * Test: Verify license creation for team
+       * Purpose: Tests that a license record can be created when assigning to a team
+       */
+      test('should create license record for team', async () => {
+        const licenseData = {
+          teamId: 1,
+          teamName: 'Test Team',
+          key: 'RIKUGAN-2025-VALID-KEY-A',
+          maxUsers: 50,
+          expiryDate: new Date('2026-12-31')
         };
 
-        const license = await LicenseService.createLicense(licenseData);
+        const license = await LicenseService.createLicenseForTeam(licenseData);
 
         expect(license).toBeDefined();
+        expect(license.teamId).toBe(1);
         expect(license.teamName).toBe('Test Team');
-        expect(license.maxUsers).toBe(10);
+        expect(license.licenseKey).toBe('RIKUGAN-2025-VALID-KEY-A');
+        expect(license.maxUsers).toBe(50);
         expect(license.isActive).toBe(true);
-        expect(license.licenseKey).toMatch(/^DSCPMS-\d{4}-[A-F0-9]{16}$/);
-      });
-
-      /**
-       * Test: Verify license creation with custom key
-       * Purpose: Tests that a custom license key can be provided and will be used
-       * instead of the auto-generated one
-       */
-      test('should create license with custom key', async () => {
-        const licenseData = {
-          teamName: 'Custom Team',
-          licenseKey: 'CUSTOM-2025-KEY',
-          maxUsers: 5,
-          isActive: true
-        };
-
-        const license = await LicenseService.createLicense(licenseData);
-
-        expect(license.licenseKey).toBe('CUSTOM-2025-KEY');
-        expect(license.teamName).toBe('Custom Team');
-      });
-
-      /**
-       * Test: Verify license creation with expiration date
-       * Purpose: Ensures that licenses can be created with an expiration date
-       */
-      test('should create license with expiration date', async () => {
-        const expirationDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
-        const licenseData = {
-          teamName: 'Expiring Team',
-          maxUsers: 10,
-          isActive: true,
-          expirationDate
-        };
-
-        const license = await LicenseService.createLicense(licenseData);
-
-        expect(license.expirationDate).toBeDefined();
-        expect(new Date(license.expirationDate).getTime()).toBeCloseTo(expirationDate.getTime(), -3);
       });
     });
 
-    describe('getAllLicenses', () => {
+    describe('getLicenseByTeamId', () => {
       /**
-       * Test: Verify retrieval of all licenses
-       * Purpose: Tests that all licenses can be retrieved without filters
+       * Test: Verify retrieval of license by team ID
+       * Purpose: Tests that a team's license can be retrieved by team ID
        */
-      test('should get all licenses', async () => {
+      test('should get license by team ID', async () => {
         await License.create({
-          teamName: 'Team 1',
-          licenseKey: 'KEY-1',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await License.create({
-          teamName: 'Team 2',
-          licenseKey: 'KEY-2',
-          maxUsers: 5,
-          isActive: false
-        });
-
-        const licenses = await LicenseService.getAllLicenses();
-
-        expect(licenses).toHaveLength(2);
-      });
-
-      /**
-       * Test: Verify filtering by active status
-       * Purpose: Tests that licenses can be filtered by their active status
-       */
-      test('should filter licenses by active status', async () => {
-        await License.create({
-          teamName: 'Active Team',
-          licenseKey: 'ACTIVE-KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await License.create({
-          teamName: 'Inactive Team',
-          licenseKey: 'INACTIVE-KEY',
-          maxUsers: 5,
-          isActive: false
-        });
-
-        const activeLicenses = await LicenseService.getAllLicenses({ isActive: true });
-
-        expect(activeLicenses).toHaveLength(1);
-        expect(activeLicenses[0].isActive).toBe(true);
-      });
-
-      /**
-       * Test: Verify filtering by team name
-       * Purpose: Tests that licenses can be searched by team name using LIKE query
-       */
-      test('should filter licenses by team name', async () => {
-        await License.create({
-          teamName: 'Development Team',
-          licenseKey: 'DEV-KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await License.create({
-          teamName: 'Marketing Team',
-          licenseKey: 'MKT-KEY',
-          maxUsers: 5,
-          isActive: true
-        });
-
-        const devLicenses = await LicenseService.getAllLicenses({ teamName: 'Development' });
-
-        expect(devLicenses).toHaveLength(1);
-        expect(devLicenses[0].teamName).toBe('Development Team');
-      });
-    });
-
-    describe('getLicenseById', () => {
-      /**
-       * Test: Verify retrieval of license by ID
-       * Purpose: Tests that a specific license can be retrieved by its ID
-       */
-      test('should get license by ID', async () => {
-        const license = await License.create({
+          teamId: 1,
           teamName: 'Test Team',
           licenseKey: 'TEST-KEY',
-          maxUsers: 10,
+          maxUsers: 50,
+          expirationDate: new Date('2026-12-31'),
           isActive: true
         });
 
-        const foundLicense = await LicenseService.getLicenseById(license.id);
+        const license = await LicenseService.getLicenseByTeamId(1);
 
-        expect(foundLicense).toBeDefined();
-        expect(foundLicense.id).toBe(license.id);
-        expect(foundLicense.teamName).toBe('Test Team');
+        expect(license).toBeDefined();
+        expect(license.teamId).toBe(1);
+        expect(license.teamName).toBe('Test Team');
       });
 
       /**
-       * Test: Verify error when license not found
-       * Purpose: Tests that an appropriate error is thrown when trying to get a non-existent license
+       * Test: Verify null returned when team has no license
+       * Purpose: Tests that null is returned for teams without assigned licenses
        */
-      test('should throw error when license not found', async () => {
-        await expect(LicenseService.getLicenseById(99999))
-          .rejects.toThrow('License not found');
+      test('should return null when team has no license', async () => {
+        const license = await LicenseService.getLicenseByTeamId(999);
+
+        expect(license).toBeNull();
       });
     });
 
-    describe('updateLicense', () => {
+    describe('isLicenseValid', () => {
       /**
-       * Test: Verify license update
-       * Purpose: Tests that license properties can be updated
+       * Test: Verify active license is valid
+       * Purpose: Tests that an active, non-expired license is validated as valid
        */
-      test('should update license', async () => {
-        const license = await License.create({
-          teamName: 'Old Team',
-          licenseKey: 'OLD-KEY',
-          maxUsers: 10,
+      test('should return true for active non-expired license', async () => {
+        await License.create({
+          teamId: 1,
+          teamName: 'Test Team',
+          licenseKey: 'TEST-KEY',
+          maxUsers: 50,
+          expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
           isActive: true
         });
 
-        const updated = await LicenseService.updateLicense(license.id, {
-          teamName: 'New Team',
-          maxUsers: 20
-        });
+        const isValid = await LicenseService.isLicenseValid(1);
 
-        expect(updated.teamName).toBe('New Team');
-        expect(updated.maxUsers).toBe(20);
+        expect(isValid).toBe(true);
       });
 
       /**
-       * Test: Verify error on updating non-existent license
-       * Purpose: Tests that an error is thrown when trying to update a license that doesn't exist
+       * Test: Verify inactive license is invalid
+       * Purpose: Tests that inactive licenses are validated as invalid
        */
-      test('should throw error when updating non-existent license', async () => {
-        await expect(LicenseService.updateLicense(99999, { teamName: 'New' }))
-          .rejects.toThrow('License not found');
-      });
-    });
-
-    describe('revokeLicense', () => {
-      /**
-       * Test: Verify license revocation
-       * Purpose: Tests that a license can be revoked (set to inactive)
-       */
-      test('should revoke license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        const revoked = await LicenseService.revokeLicense(license.id);
-
-        expect(revoked.isActive).toBe(false);
-      });
-
-      /**
-       * Test: Verify error when revoking non-existent license
-       * Purpose: Tests that an error is thrown when trying to revoke a non-existent license
-       */
-      test('should throw error when revoking non-existent license', async () => {
-        await expect(LicenseService.revokeLicense(99999))
-          .rejects.toThrow('License not found');
-      });
-    });
-
-    describe('deleteLicense', () => {
-      /**
-       * Test: Verify license deletion
-       * Purpose: Tests that a license can be permanently deleted
-       */
-      test('should delete license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        const result = await LicenseService.deleteLicense(license.id);
-
-        expect(result).toBe(true);
-
-        const found = await License.findByPk(license.id);
-        expect(found).toBeNull();
-      });
-
-      /**
-       * Test: Verify error when deleting non-existent license
-       * Purpose: Tests that an error is thrown when trying to delete a non-existent license
-       */
-      test('should throw error when deleting non-existent license', async () => {
-        await expect(LicenseService.deleteLicense(99999))
-          .rejects.toThrow('License not found');
-      });
-    });
-
-    describe('assignLicenseToUser', () => {
-      /**
-       * Test: Verify license assignment to user
-       * Purpose: Tests that a license can be successfully assigned to a user
-       */
-      test('should assign license to user', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        const result = await LicenseService.assignLicenseToUser(license.id, goonUser.id);
-
-        expect(result).toBe(true);
-
-        const user = await User.findByPk(goonUser.id, {
-          include: [License]
-        });
-
-        expect(user.Licenses).toHaveLength(1);
-        expect(user.Licenses[0].id).toBe(license.id);
-      });
-
-      /**
-       * Test: Verify error when license is inactive
-       * Purpose: Tests that inactive licenses cannot be assigned to users
-       */
-      test('should throw error when assigning inactive license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
+      test('should return false for inactive license', async () => {
+        await License.create({
+          teamId: 1,
+          teamName: 'Test Team',
+          licenseKey: 'TEST-KEY',
+          maxUsers: 50,
+          expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
           isActive: false
         });
 
-        await expect(LicenseService.assignLicenseToUser(license.id, goonUser.id))
-          .rejects.toThrow('License is not active');
+        const isValid = await LicenseService.isLicenseValid(1);
+
+        expect(isValid).toBe(false);
       });
 
       /**
-       * Test: Verify error when license max users reached
-       * Purpose: Tests that a license cannot be assigned to more users than its maxUsers limit
+       * Test: Verify expired license is auto-deactivated
+       * Purpose: Tests that expired licenses are automatically deactivated and validated as invalid
        */
-      test('should throw error when license max users reached', async () => {
+      test('should auto-deactivate and return false for expired license', async () => {
         const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 1,
+          teamId: 1,
+          teamName: 'Test Team',
+          licenseKey: 'TEST-KEY',
+          maxUsers: 50,
+          expirationDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
           isActive: true
         });
 
-        await LicenseService.assignLicenseToUser(license.id, goonUser.id);
+        const isValid = await LicenseService.isLicenseValid(1);
 
-        await expect(LicenseService.assignLicenseToUser(license.id, hashiraUser.id))
-          .rejects.toThrow('License has reached maximum users (1)');
+        expect(isValid).toBe(false);
+
+        // Verify license was deactivated
+        await license.reload();
+        expect(license.isActive).toBe(false);
       });
 
       /**
-       * Test: Verify error when user not found
-       * Purpose: Tests that an error is thrown when trying to assign a license to a non-existent user
+       * Test: Verify returns false when no license found
+       * Purpose: Tests that validation returns false for teams without licenses
        */
-      test('should throw error when user not found', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
+      test('should return false when no license found', async () => {
+        const isValid = await LicenseService.isLicenseValid(999);
 
-        await expect(LicenseService.assignLicenseToUser(license.id, 99999))
-          .rejects.toThrow('User not found');
-      });
-
-      /**
-       * Test: Verify error when license not found
-       * Purpose: Tests that an error is thrown when trying to assign a non-existent license
-       */
-      test('should throw error when license not found', async () => {
-        await expect(LicenseService.assignLicenseToUser(99999, goonUser.id))
-          .rejects.toThrow('License not found');
-      });
-    });
-
-    describe('removeLicenseFromUser', () => {
-      /**
-       * Test: Verify license removal from user
-       * Purpose: Tests that a license can be successfully removed from a user
-       */
-      test('should remove license from user', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await LicenseService.assignLicenseToUser(license.id, goonUser.id);
-        const result = await LicenseService.removeLicenseFromUser(license.id, goonUser.id);
-
-        expect(result).toBe(true);
-
-        const user = await User.findByPk(goonUser.id, {
-          include: [License]
-        });
-
-        expect(user.Licenses).toHaveLength(0);
-      });
-
-      /**
-       * Test: Verify error when removing from non-existent user
-       * Purpose: Tests that an error is thrown when trying to remove a license from a non-existent user
-       */
-      test('should throw error when user not found', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await expect(LicenseService.removeLicenseFromUser(license.id, 99999))
-          .rejects.toThrow('User not found');
-      });
-
-      /**
-       * Test: Verify error when removing non-existent license
-       * Purpose: Tests that an error is thrown when trying to remove a non-existent license
-       */
-      test('should throw error when license not found', async () => {
-        await expect(LicenseService.removeLicenseFromUser(99999, goonUser.id))
-          .rejects.toThrow('License not found');
-      });
-    });
-
-    describe('validateUserLicense', () => {
-      /**
-       * Test: Verify valid license validation
-       * Purpose: Tests that a user with a valid, active license passes validation
-       */
-      test('should validate user with active license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true,
-          expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-        });
-
-        await LicenseService.assignLicenseToUser(license.id, goonUser.id);
-
-        const validation = await LicenseService.validateUserLicense(goonUser.id);
-
-        expect(validation.valid).toBe(true);
-        expect(validation.license).toBeDefined();
-        expect(validation.license.id).toBe(license.id);
-      });
-
-      /**
-       * Test: Verify validation fails for user without license
-       * Purpose: Tests that validation fails for a user with no assigned licenses
-       */
-      test('should return invalid for user without license', async () => {
-        const validation = await LicenseService.validateUserLicense(goonUser.id);
-
-        expect(validation.valid).toBe(false);
-        expect(validation.reason).toBe('No license assigned');
-      });
-
-      /**
-       * Test: Verify validation fails for inactive license
-       * Purpose: Tests that validation fails when user has only inactive licenses
-       */
-      test('should return invalid for user with inactive license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await LicenseService.assignLicenseToUser(license.id, goonUser.id);
-        await license.update({ isActive: false });
-
-        const validation = await LicenseService.validateUserLicense(goonUser.id);
-
-        expect(validation.valid).toBe(false);
-        expect(validation.reason).toBe('No valid license');
-      });
-
-      /**
-       * Test: Verify validation fails for expired license
-       * Purpose: Tests that validation fails when user has only expired licenses
-       */
-      test('should return invalid for user with expired license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true,
-          expirationDate: new Date(Date.now() - 24 * 60 * 60 * 1000) // Yesterday
-        });
-
-        const user = await User.findByPk(goonUser.id);
-        await user.addLicense(license);
-
-        const validation = await LicenseService.validateUserLicense(goonUser.id);
-
-        expect(validation.valid).toBe(false);
-        expect(validation.reason).toBe('No valid license');
-      });
-
-      /**
-       * Test: Verify error for non-existent user
-       * Purpose: Tests that validation returns invalid for non-existent users
-       */
-      test('should return invalid for non-existent user', async () => {
-        const validation = await LicenseService.validateUserLicense(99999);
-
-        expect(validation.valid).toBe(false);
-        expect(validation.reason).toBe('User not found');
-      });
-    });
-
-    describe('checkExpiringLicenses', () => {
-      /**
-       * Test: Verify detection of expiring licenses
-       * Purpose: Tests that licenses expiring within a threshold period are correctly identified
-       */
-      test('should find licenses expiring within threshold', async () => {
-        const expiringDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000); // 5 days from now
-
-        await License.create({
-          teamName: 'Expiring Team',
-          licenseKey: 'EXPIRING-KEY',
-          maxUsers: 10,
-          isActive: true,
-          expirationDate: expiringDate
-        });
-
-        await License.create({
-          teamName: 'Valid Team',
-          licenseKey: 'VALID-KEY',
-          maxUsers: 10,
-          isActive: true,
-          expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-        });
-
-        const expiring = await LicenseService.checkExpiringLicenses(7);
-
-        expect(expiring).toHaveLength(1);
-        expect(expiring[0].teamName).toBe('Expiring Team');
-      });
-
-      /**
-       * Test: Verify only active licenses are checked
-       * Purpose: Tests that inactive licenses are not included in expiring licenses check
-       */
-      test('should only check active licenses', async () => {
-        await License.create({
-          teamName: 'Inactive Expiring',
-          licenseKey: 'INACTIVE-KEY',
-          maxUsers: 10,
-          isActive: false,
-          expirationDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-        });
-
-        const expiring = await LicenseService.checkExpiringLicenses(7);
-
-        expect(expiring).toHaveLength(0);
-      });
-
-      /**
-       * Test: Verify custom threshold
-       * Purpose: Tests that custom day thresholds work correctly
-       */
-      test('should respect custom threshold', async () => {
-        await License.create({
-          teamName: 'Team 1',
-          licenseKey: 'KEY-1',
-          maxUsers: 10,
-          isActive: true,
-          expirationDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000)
-        });
-
-        const expiring7 = await LicenseService.checkExpiringLicenses(7);
-        const expiring30 = await LicenseService.checkExpiringLicenses(30);
-
-        expect(expiring7).toHaveLength(0);
-        expect(expiring30).toHaveLength(1);
-      });
-    });
-
-    describe('getLicenseStatistics', () => {
-      /**
-       * Test: Verify license statistics calculation
-       * Purpose: Tests that license statistics are correctly calculated including totals,
-       * active, expired, and revoked licenses
-       */
-      test('should calculate license statistics', async () => {
-        await License.create({
-          teamName: 'Active Team',
-          licenseKey: 'ACTIVE-KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await License.create({
-          teamName: 'Inactive Team',
-          licenseKey: 'INACTIVE-KEY',
-          maxUsers: 5,
-          isActive: false
-        });
-
-        await License.create({
-          teamName: 'Expired Team',
-          licenseKey: 'EXPIRED-KEY',
-          maxUsers: 3,
-          isActive: true,
-          expirationDate: new Date(Date.now() - 24 * 60 * 60 * 1000)
-        });
-
-        const stats = await LicenseService.getLicenseStatistics();
-
-        expect(stats.total).toBe(3);
-        expect(stats.active).toBe(2);
-        expect(stats.expired).toBe(1);
-      });
-
-      /**
-       * Test: Verify user assignment count in statistics
-       * Purpose: Tests that the total number of user-license assignments is correctly counted
-       */
-      test('should count assigned users', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await LicenseService.assignLicenseToUser(license.id, goonUser.id);
-        await LicenseService.assignLicenseToUser(license.id, hashiraUser.id);
-
-        const stats = await LicenseService.getLicenseStatistics();
-
-        expect(stats.totalAssignedUsers).toBe(2);
+        expect(isValid).toBe(false);
       });
     });
   });
 
   describe('License API Endpoints', () => {
-    describe('GET /api/v1/licenses', () => {
+    describe('POST /api/v1/licenses/validate', () => {
       /**
-       * Test: Verify admin can get all licenses
-       * Purpose: Tests that admin users can retrieve all licenses via the API
+       * Test: Verify valid license key validation endpoint
+       * Purpose: Tests that the API can validate a correct license key from environment
        */
-      test('should allow admin to get all licenses', async () => {
+      test('should validate correct license key', async () => {
+        const res = await request(app)
+          .post('/api/v1/licenses/validate')
+          .send({ licenseKey: 'RIKUGAN-2025-VALID-KEY-A' });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.valid).toBe(true);
+        expect(res.body.config.maxUsers).toBe(50);
+      });
+
+      /**
+       * Test: Verify invalid license key rejection
+       * Purpose: Tests that the API rejects invalid license keys
+       */
+      test('should reject invalid license key', async () => {
+        const res = await request(app)
+          .post('/api/v1/licenses/validate')
+          .send({ licenseKey: 'INVALID-KEY-123' });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.success).toBe(false);
+        expect(res.body.valid).toBe(false);
+      });
+
+      /**
+       * Test: Verify expired license key rejection
+       * Purpose: Tests that the API rejects expired license keys
+       */
+      test('should reject expired license key', async () => {
+        const res = await request(app)
+          .post('/api/v1/licenses/validate')
+          .send({ licenseKey: 'RIKUGAN-2025-EXPIRED-KEY' });
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.success).toBe(false);
+        expect(res.body.valid).toBe(false);
+      });
+
+      /**
+       * Test: Verify already assigned license key rejection
+       * Purpose: Tests that the API rejects license keys already assigned to teams
+       */
+      test('should reject already assigned license key', async () => {
         await License.create({
-          teamName: 'Team 1',
-          licenseKey: 'KEY-1',
-          maxUsers: 10,
+          teamId: 1,
+          teamName: 'Existing Team',
+          licenseKey: 'RIKUGAN-2025-VALID-KEY-B',
+          maxUsers: 100,
+          expirationDate: new Date('2026-12-31'),
           isActive: true
         });
 
         const res = await request(app)
-          .get('/api/v1/licenses')
-          .set('Authorization', `Bearer ${adminToken}`);
+          .post('/api/v1/licenses/validate')
+          .send({ licenseKey: 'RIKUGAN-2025-VALID-KEY-B' });
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.data).toBeInstanceOf(Array);
+        expect(res.statusCode).toBe(400);
+        expect(res.body.success).toBe(false);
+        expect(res.body.valid).toBe(false);
+        expect(res.body.message).toContain('already assigned');
       });
 
       /**
-       * Test: Verify non-admin cannot get all licenses
-       * Purpose: Tests that non-admin users are denied access to license listing
+       * Test: Verify missing license key validation
+       * Purpose: Tests that the API validates required licenseKey parameter
        */
-      test('should deny non-admin access to get all licenses', async () => {
+      test('should return error when license key is missing', async () => {
         const res = await request(app)
-          .get('/api/v1/licenses')
-          .set('Authorization', `Bearer ${goonToken}`);
+          .post('/api/v1/licenses/validate')
+          .send({});
+
+        expect(res.statusCode).toBe(400);
+        expect(res.body.success).toBe(false);
+        expect(res.body.message).toContain('Validation failed');
+      });
+    });
+
+    describe('GET /api/v1/licenses/me', () => {
+      /**
+       * Test: Verify getting current team license
+       * Purpose: Tests that authenticated users can retrieve their team's license
+       * Note: In real flow, teamId is assigned during team creation, not manually
+       */
+      test.skip('should get current team license for authenticated user', async () => {
+        // This test is skipped because it tests an artificial scenario
+        // In the real application flow, users get teamId during team creation via the team routes
+        // Testing this would require setting up the entire team creation flow
+      });
+
+      /**
+       * Test: Verify error when user has no team
+       * Purpose: Tests that users without team assignment get appropriate error from middleware
+       */
+      test('should return error when user has no team', async () => {
+        // Create a new user without team
+        const newUser = await request(app)
+          .post('/api/v1/auth/register')
+          .send({
+            username: 'noteam2',
+            email: 'noteam2@test.com',
+            password: 'Test123!',
+            role: 'GOON'
+          });
+
+        const login = await request(app)
+          .post('/api/v1/auth/login')
+          .send({ username: 'noteam2', password: 'Test123!' });
+
+        const res = await request(app)
+          .get('/api/v1/licenses/me')
+          .set('Authorization', `Bearer ${login.body.data.token}`);
 
         expect(res.statusCode).toBe(403);
+        expect(res.body.success).toBe(false);
+        expect(res.body.message).toContain('No team assigned');
       });
 
       /**
-       * Test: Verify query parameters work
-       * Purpose: Tests that filter query parameters are properly passed and applied
+       * Test: Verify error when not authenticated
+       * Purpose: Tests that unauthenticated requests are rejected
        */
-      test('should filter licenses with query parameters', async () => {
-        await License.create({
-          teamName: 'Active Team',
-          licenseKey: 'ACTIVE-KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await License.create({
-          teamName: 'Inactive Team',
-          licenseKey: 'INACTIVE-KEY',
-          maxUsers: 5,
-          isActive: false
-        });
-
+      test('should return error when not authenticated', async () => {
         const res = await request(app)
-          .get('/api/v1/licenses?isActive=true')
-          .set('Authorization', `Bearer ${adminToken}`);
+          .get('/api/v1/licenses/me');
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.data).toHaveLength(1);
-        // isActive should be truthy when filtering for active licenses
-        expect(res.body.data[0].teamName).toBe('Active Team');
+        expect(res.statusCode).toBe(401);
+      });
+    });
+  });
+
+  describe('License Middleware - validateLicense', () => {
+    /**
+     * Test: Verify middleware blocks access when no team assigned
+     * Purpose: Tests that middleware rejects requests from users without team assignment
+     */
+    test('should block access when user has no team assignment', async () => {
+      const res = await request(app)
+        .get('/api/v1/licenses/me')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('No team assigned');
+    });
+
+    /**
+     * Test: Verify middleware blocks access when license not found
+     * Purpose: Tests that middleware rejects requests when team has no license in database
+     */
+    test('should block access when license not found for team', async () => {
+      // Update user to have a teamId but no license exists
+      const userWithFakeTeam = await User.findOne({ where: { username: 'noTeamUser' } });
+      userWithFakeTeam.teamId = 999;
+      await userWithFakeTeam.save();
+
+      // Re-login to get new token with updated teamId
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'noTeamUser', password: 'Test123!' });
+      
+      const newToken = loginRes.body.data.token;
+
+      const res = await request(app)
+        .get('/api/v1/licenses/me')
+        .set('Authorization', `Bearer ${newToken}`);
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('No valid license found');
+
+      // Reset teamId
+      userWithFakeTeam.teamId = null;
+      await userWithFakeTeam.save();
+    });
+
+    /**
+     * Test: Verify middleware blocks access when license is inactive
+     * Purpose: Tests that middleware rejects requests when license is deactivated
+     */
+    test('should block access when license is inactive', async () => {
+      const user = await User.findOne({ where: { username: 'noTeamUser' } });
+      user.teamId = 1;
+      await user.save();
+
+      await License.create({
+        teamId: 1,
+        teamName: 'Test Team',
+        licenseKey: 'INACTIVE-KEY',
+        maxUsers: 50,
+        expirationDate: new Date('2026-12-31'),
+        isActive: false
+      });
+
+      // Re-login to get token with updated teamId
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'noTeamUser', password: 'Test123!' });
+      
+      const res = await request(app)
+        .get('/api/v1/licenses/me')
+        .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('revoked');
+
+      // Cleanup
+      user.teamId = null;
+      await user.save();
+      await License.destroy({ where: { teamId: 1 } });
+    });
+
+    /**
+     * Test: Verify middleware blocks access when license is expired
+     * Purpose: Tests that middleware auto-deactivates expired licenses and blocks access
+     */
+    test('should block access and auto-deactivate expired license', async () => {
+      const user = await User.findOne({ where: { username: 'noTeamUser' } });
+      user.teamId = 2;
+      await user.save();
+
+      const license = await License.create({
+        teamId: 2,
+        teamName: 'Test Team',
+        licenseKey: 'EXPIRED-KEY',
+        maxUsers: 50,
+        expirationDate: new Date('2020-01-01'),
+        isActive: true
+      });
+
+      // Re-login to get token with updated teamId
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'noTeamUser', password: 'Test123!' });
+      
+      const res = await request(app)
+        .get('/api/v1/licenses/me')
+        .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('expired');
+
+      // Verify license was auto-deactivated
+      await license.reload();
+      expect(license.isActive).toBe(false);
+
+      // Cleanup
+      user.teamId = null;
+      await user.save();
+      await License.destroy({ where: { teamId: 2 } });
+    });
+
+    /**
+     * Test: Verify middleware allows access with valid license
+     * Purpose: Tests that middleware allows requests when license is valid
+     */
+    test('should allow access with valid license', async () => {
+      const user = await User.findOne({ where: { username: 'noTeamUser' } });
+      user.teamId = 3;
+      await user.save();
+
+      await License.create({
+        teamId: 3,
+        teamName: 'Test Team',
+        licenseKey: 'VALID-KEY',
+        maxUsers: 50,
+        expirationDate: new Date('2026-12-31'),
+        isActive: true
+      });
+
+      // Re-login to get token with updated teamId
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'noTeamUser', password: 'Test123!' });
+      
+      const res = await request(app)
+        .get('/api/v1/licenses/me')
+        .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+
+      // Should pass middleware and return license data
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      // Cleanup
+      user.teamId = null;
+      await user.save();
+      await License.destroy({ where: { teamId: 3 } });
+    });
+  });
+
+  describe('License Utility Functions', () => {
+    describe('loadLicensesFromConfig', () => {
+      const { loadLicensesFromConfig } = require('../src/middleware/validateLicense');
+
+      /**
+       * Test: Verify license config loading from environment
+       * Purpose: Tests that licenses can be loaded and parsed from environment variable
+       */
+      test('should load licenses from environment config', () => {
+        const licenses = loadLicensesFromConfig();
+
+        expect(licenses).toBeDefined();
+        expect(Array.isArray(licenses)).toBe(true);
+        expect(licenses.length).toBe(3);
+        expect(licenses[0].key).toBe('RIKUGAN-2025-VALID-KEY-A');
+      });
+
+      /**
+       * Test: Verify handling of missing LICENSES env variable
+       * Purpose: Tests that function returns empty array when env variable is missing
+       */
+      test('should return empty array when LICENSES env is missing', () => {
+        const originalLicenses = process.env.LICENSES;
+        delete process.env.LICENSES;
+
+        const licenses = loadLicensesFromConfig();
+
+        expect(licenses).toEqual([]);
+
+        // Restore
+        process.env.LICENSES = originalLicenses;
+      });
+
+      /**
+       * Test: Verify handling of invalid JSON in LICENSES env variable
+       * Purpose: Tests that function handles malformed JSON gracefully
+       */
+      test('should return empty array when LICENSES env has invalid JSON', () => {
+        const originalLicenses = process.env.LICENSES;
+        process.env.LICENSES = 'invalid json {';
+
+        const licenses = loadLicensesFromConfig();
+
+        expect(licenses).toEqual([]);
+
+        // Restore
+        process.env.LICENSES = originalLicenses;
+      });
+
+      /**
+       * Test: Verify handling of non-array LICENSES env variable
+       * Purpose: Tests that function validates the structure of parsed JSON
+       */
+      test('should return empty array when LICENSES env is not an array', () => {
+        const originalLicenses = process.env.LICENSES;
+        process.env.LICENSES = '{"key": "value"}';
+
+        const licenses = loadLicensesFromConfig();
+
+        expect(licenses).toEqual([]);
+
+        // Restore
+        process.env.LICENSES = originalLicenses;
       });
     });
 
-    describe('GET /api/v1/licenses/:id', () => {
+    describe('validateLicenseKey', () => {
+      const { validateLicenseKey } = require('../src/middleware/validateLicense');
+
       /**
-       * Test: Verify getting license by ID
-       * Purpose: Tests that a specific license can be retrieved by its ID
+       * Test: Verify valid license key returns config
+       * Purpose: Tests that valid license keys return proper configuration
        */
-      test('should get license by ID', async () => {
-        const license = await License.create({
-          teamName: 'Test Team',
-          licenseKey: 'TEST-KEY',
-          maxUsers: 10,
-          isActive: true
-        });
+      test('should return config for valid license key', () => {
+        const config = validateLicenseKey('RIKUGAN-2025-VALID-KEY-A');
 
-        const res = await request(app)
-          .get(`/api/v1/licenses/${license.id}`)
-          .set('Authorization', `Bearer ${adminToken}`);
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.data.id).toBe(license.id);
-        expect(res.body.data.teamName).toBe('Test Team');
+        expect(config).toBeDefined();
+        expect(config.key).toBe('RIKUGAN-2025-VALID-KEY-A');
+        expect(config.maxUsers).toBe(50);
+        expect(config.expiryDate).toBeInstanceOf(Date);
       });
 
       /**
-       * Test: Verify error for non-existent license
-       * Purpose: Tests that the API returns appropriate error for non-existent licenses
+       * Test: Verify invalid license key returns null
+       * Purpose: Tests that non-existent license keys are rejected
        */
-      test('should return error for non-existent license', async () => {
-        const res = await request(app)
-          .get('/api/v1/licenses/99999')
-          .set('Authorization', `Bearer ${adminToken}`);
+      test('should return null for invalid license key', () => {
+        const config = validateLicenseKey('NON-EXISTENT-KEY');
 
-        expect(res.statusCode).toBeGreaterThanOrEqual(400);
-      });
-    });
-
-    describe('POST /api/v1/licenses', () => {
-      /**
-       * Test: Verify admin can create license
-       * Purpose: Tests that admin users can create new licenses via the API
-       */
-      test('should allow admin to create license', async () => {
-        const res = await request(app)
-          .post('/api/v1/licenses')
-          .set('Authorization', `Bearer ${adminToken}`)
-          .send({
-            teamName: 'New Team',
-            licenseKey: 'TEST-NEW-KEY-2025',
-            maxUsers: 15,
-            isActive: true
-          });
-
-        expect(res.statusCode).toBe(201);
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toBe('License created successfully');
-        expect(res.body.data.teamName).toBe('New Team');
-        expect(res.body.data.maxUsers).toBe(15);
-        expect(res.body.data.licenseKey).toBe('TEST-NEW-KEY-2025');
+        expect(config).toBeNull();
       });
 
       /**
-       * Test: Verify non-admin cannot create license
-       * Purpose: Tests that non-admin users are denied permission to create licenses
+       * Test: Verify expired license key returns null
+       * Purpose: Tests that expired licenses from config are rejected
        */
-      test('should deny non-admin from creating license', async () => {
-        const res = await request(app)
-          .post('/api/v1/licenses')
-          .set('Authorization', `Bearer ${hashiraToken}`)
-          .send({
-            teamName: 'New Team',
-            maxUsers: 15
-          });
+      test('should return null for expired license key', () => {
+        const config = validateLicenseKey('RIKUGAN-2025-EXPIRED-KEY');
 
-        expect(res.statusCode).toBe(403);
+        expect(config).toBeNull();
       });
 
       /**
-       * Test: Verify validation for required fields
-       * Purpose: Tests that the API validates required fields when creating a license
+       * Test: Verify case-sensitive license key validation
+       * Purpose: Tests that license key validation is case-sensitive
        */
-      test('should validate required fields', async () => {
-        const res = await request(app)
-          .post('/api/v1/licenses')
-          .set('Authorization', `Bearer ${adminToken}`)
-          .send({
-            maxUsers: 15
-          });
+      test('should be case-sensitive for license keys', () => {
+        const config = validateLicenseKey('rikugan-2025-valid-key-a');
 
-        expect(res.statusCode).toBeGreaterThanOrEqual(400);
+        expect(config).toBeNull();
+      });
+
+      /**
+       * Test: Verify empty string returns null
+       * Purpose: Tests handling of empty license keys
+       */
+      test('should return null for empty string', () => {
+        const config = validateLicenseKey('');
+
+        expect(config).toBeNull();
       });
     });
+  });
 
-    describe('PUT /api/v1/licenses/:id', () => {
-      /**
-       * Test: Verify admin can update license
-       * Purpose: Tests that admin users can update existing licenses
-       */
-      test('should allow admin to update license', async () => {
-        const license = await License.create({
-          teamName: 'Old Team',
-          licenseKey: 'OLD-KEY',
-          maxUsers: 10,
-          isActive: true
-        });
+  describe('License Service - Error Handling', () => {
+    /**
+     * Test: Verify service handles database errors in getLicenseByTeamId
+     * Purpose: Tests error handling when database queries fail
+     */
+    test('should throw error when database query fails in getLicenseByTeamId', async () => {
+      // Mock License.findOne to throw error
+      const originalFindOne = License.findOne;
+      License.findOne = jest.fn().mockRejectedValue(new Error('Database error'));
 
-        const res = await request(app)
-          .put(`/api/v1/licenses/${license.id}`)
-          .set('Authorization', `Bearer ${adminToken}`)
-          .send({
-            teamName: 'Updated Team',
-            maxUsers: 20
-          });
+      await expect(LicenseService.getLicenseByTeamId(1)).rejects.toThrow('Database error');
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toBe('License updated successfully');
-        expect(res.body.data.teamName).toBe('Updated Team');
-        expect(res.body.data.maxUsers).toBe(20);
-      });
-
-      /**
-       * Test: Verify non-admin cannot update license
-       * Purpose: Tests that non-admin users are denied permission to update licenses
-       */
-      test('should deny non-admin from updating license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        const res = await request(app)
-          .put(`/api/v1/licenses/${license.id}`)
-          .set('Authorization', `Bearer ${goonToken}`)
-          .send({
-            teamName: 'Updated Team'
-          });
-
-        expect(res.statusCode).toBe(403);
-      });
+      // Restore
+      License.findOne = originalFindOne;
     });
 
-    describe('POST /api/v1/licenses/:id/revoke', () => {
-      /**
-       * Test: Verify admin can revoke license
-       * Purpose: Tests that admin users can revoke licenses
-       */
-      test('should allow admin to revoke license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
+    /**
+     * Test: Verify service handles database errors in createLicenseForTeam
+     * Purpose: Tests error handling when license creation fails
+     */
+    test('should throw error when license creation fails', async () => {
+      const originalCreate = License.create;
+      License.create = jest.fn().mockRejectedValue(new Error('Creation failed'));
 
-        const res = await request(app)
-          .put(`/api/v1/licenses/${license.id}/revoke`)
-          .set('Authorization', `Bearer ${adminToken}`);
+      const licenseData = {
+        teamId: 1,
+        teamName: 'Test',
+        key: 'TEST-KEY',
+        maxUsers: 50,
+        expiryDate: new Date('2026-12-31')
+      };
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toBe('License revoked successfully');
-        expect(res.body.data.isActive).toBeFalsy();
-      });
+      await expect(LicenseService.createLicenseForTeam(licenseData)).rejects.toThrow('Creation failed');
 
-      /**
-       * Test: Verify non-admin cannot revoke license
-       * Purpose: Tests that non-admin users are denied permission to revoke licenses
-       */
-      test('should deny non-admin from revoking license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        const res = await request(app)
-          .put(`/api/v1/licenses/${license.id}/revoke`)
-          .set('Authorization', `Bearer ${hashiraToken}`);
-
-        expect(res.statusCode).toBe(403);
-      });
+      // Restore
+      License.create = originalCreate;
     });
 
-    describe('DELETE /api/v1/licenses/:id', () => {
-      /**
-       * Test: Verify admin can delete license
-       * Purpose: Tests that admin users can permanently delete licenses
-       */
-      test('should allow admin to delete license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
+    /**
+     * Test: Verify service handles errors in validateForTeamCreation
+     * Purpose: Tests error handling in validation logic
+     */
+    test('should throw error when validation fails unexpectedly', async () => {
+      const originalFindOne = License.findOne;
+      License.findOne = jest.fn().mockRejectedValue(new Error('Validation error'));
 
-        const res = await request(app)
-          .delete(`/api/v1/licenses/${license.id}`)
-          .set('Authorization', `Bearer ${adminToken}`);
+      await expect(LicenseService.validateForTeamCreation('RIKUGAN-2025-VALID-KEY-A')).rejects.toThrow('Validation error');
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toBe('License deleted successfully');
-
-        const found = await License.findByPk(license.id);
-        expect(found).toBeNull();
-      });
-
-      /**
-       * Test: Verify non-admin cannot delete license
-       * Purpose: Tests that non-admin users are denied permission to delete licenses
-       */
-      test('should deny non-admin from deleting license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        const res = await request(app)
-          .delete(`/api/v1/licenses/${license.id}`)
-          .set('Authorization', `Bearer ${goonToken}`);
-
-        expect(res.statusCode).toBe(403);
-      });
+      // Restore
+      License.findOne = originalFindOne;
     });
 
-    describe('POST /api/v1/licenses/:id/assign', () => {
-      /**
-       * Test: Verify admin can assign license to user
-       * Purpose: Tests that admin users can assign licenses to users
-       */
-      test('should allow admin to assign license to user', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
+    /**
+     * Test: Verify isLicenseValid returns false on database error
+     * Purpose: Tests that validation gracefully handles database errors
+     */
+    test('should return false when isLicenseValid encounters database error', async () => {
+      const originalFindOne = License.findOne;
+      License.findOne = jest.fn().mockRejectedValue(new Error('DB error'));
 
-        const res = await request(app)
-          .post(`/api/v1/licenses/${license.id}/assign`)
-          .set('Authorization', `Bearer ${adminToken}`)
-          .send({
-            userId: goonUser.id
-          });
+      const result = await LicenseService.isLicenseValid(1);
 
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toBe('License assigned to user successfully');
-      });
+      expect(result).toBe(false);
 
-      /**
-       * Test: Verify cannot assign inactive license
-       * Purpose: Tests that inactive licenses cannot be assigned to users
-       */
-      test('should not allow assigning inactive license', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: false
-        });
-
-        const res = await request(app)
-          .post(`/api/v1/licenses/${license.id}/assign`)
-          .set('Authorization', `Bearer ${adminToken}`)
-          .send({
-            userId: goonUser.id
-          });
-
-        expect(res.statusCode).toBeGreaterThanOrEqual(400);
-      });
+      // Restore
+      License.findOne = originalFindOne;
     });
 
-    describe('POST /api/v1/licenses/:id/remove', () => {
-      /**
-       * Test: Verify admin can remove license from user
-       * Purpose: Tests that admin users can remove licenses from users
-       */
-      test('should allow admin to remove license from user', async () => {
-        const license = await License.create({
-          teamName: 'Team',
-          licenseKey: 'KEY',
-          maxUsers: 10,
-          isActive: true
-        });
-
-        await LicenseService.assignLicenseToUser(license.id, goonUser.id);
-
-        const res = await request(app)
-          .delete(`/api/v1/licenses/${license.id}/users`)
-          .set('Authorization', `Bearer ${adminToken}`)
-          .send({
-            userId: goonUser.id
-          });
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.message).toBe('License removed from user successfully');
+    /**
+     * Test: Verify isLicenseValid handles far future expiration date
+     * Purpose: Tests that licenses with far future expiration dates are valid
+     */
+    test('should return true for active license with far future expiration', async () => {
+      await License.create({
+        teamId: 10,
+        teamName: 'Long Term Team',
+        licenseKey: 'LONG-TERM-KEY',
+        maxUsers: 50,
+        expirationDate: new Date('2099-12-31'),
+        isActive: true
       });
+
+      const result = await LicenseService.isLicenseValid(10);
+
+      expect(result).toBe(true);
+
+      // Cleanup
+      await License.destroy({ where: { teamId: 10 } });
+    });
+  });
+
+  describe('License Controller - Additional Edge Cases', () => {
+    /**
+     * Test: Verify controller handles missing licenseKey in request body
+     * Purpose: Tests validation of required request parameters
+     */
+    test('should return 400 when licenseKey is missing in validate endpoint', async () => {
+      const res = await request(app)
+        .post('/api/v1/licenses/validate')
+        .send({});
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
     });
 
-    describe('GET /api/v1/licenses/expiring', () => {
-      /**
-       * Test: Verify admin can check expiring licenses
-       * Purpose: Tests that admin users can retrieve licenses expiring within a threshold
-       */
-      test('should allow admin to check expiring licenses', async () => {
-        await License.create({
-          teamName: 'Expiring Team',
-          licenseKey: 'EXPIRING-KEY',
-          maxUsers: 10,
-          isActive: true,
-          expirationDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
-        });
+    /**
+     * Test: Verify controller handles empty string licenseKey
+     * Purpose: Tests validation of empty license keys
+     */
+    test('should reject empty string license key', async () => {
+      const res = await request(app)
+        .post('/api/v1/licenses/validate')
+        .send({ licenseKey: '' });
 
-        const res = await request(app)
-          .get('/api/v1/licenses/expiring?days=7')
-          .set('Authorization', `Bearer ${adminToken}`);
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.data).toBeInstanceOf(Array);
-      });
-
-      /**
-       * Test: Verify default threshold is used
-       * Purpose: Tests that a default threshold of 7 days is used when not specified
-       */
-      test('should use default threshold when not specified', async () => {
-        const res = await request(app)
-          .get('/api/v1/licenses/expiring')
-          .set('Authorization', `Bearer ${adminToken}`);
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-      });
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
     });
 
-    describe('GET /api/v1/licenses/statistics', () => {
-      /**
-       * Test: Verify admin can get license statistics
-       * Purpose: Tests that admin users can retrieve license statistics
-       */
-      test('should allow admin to get license statistics', async () => {
-        await License.create({
-          teamName: 'Team 1',
-          licenseKey: 'KEY-1',
-          maxUsers: 10,
+    /**
+     * Test: Verify controller handles whitespace-only licenseKey
+     * Purpose: Tests validation of whitespace license keys
+     */
+    test('should reject whitespace-only license key', async () => {
+      const res = await request(app)
+        .post('/api/v1/licenses/validate')
+        .send({ licenseKey: '   ' });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    /**
+     * Test: Verify getCurrentTeamLicense endpoint blocked by middleware when no license
+     * Purpose: Tests that middleware blocks access before controller when license missing
+     */
+    test('should return 403 when team has no license (middleware blocks)', async () => {
+      const user = await User.findOne({ where: { username: 'noTeamUser' } });
+      user.teamId = 999;
+      await user.save();
+
+      // Re-login to get token with updated teamId
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'noTeamUser', password: 'Test123!' });
+
+      const res = await request(app)
+        .get('/api/v1/licenses/me')
+        .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('No valid license found');
+
+      // Cleanup
+      user.teamId = null;
+      await user.save();
+    });
+
+    /**
+     * Test: Verify getCurrentTeamLicense returns license details
+     * Purpose: Tests successful retrieval of team license
+     */
+    test('should return license details for user with valid team license', async () => {
+      const user = await User.findOne({ where: { username: 'noTeamUser' } });
+      user.teamId = 5;
+      await user.save();
+
+      await License.create({
+        teamId: 5,
+        teamName: 'Test Team',
+        licenseKey: 'TEST-LICENSE-KEY',
+        maxUsers: 75,
+        expirationDate: new Date('2026-12-31'),
+        isActive: true
+      });
+
+      // Re-login to get token with updated teamId
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'noTeamUser', password: 'Test123!' });
+
+      const res = await request(app)
+        .get('/api/v1/licenses/me')
+        .set('Authorization', `Bearer ${loginRes.body.data.token}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toBeDefined();
+      expect(res.body.data.licenseKey).toBe('TEST-LICENSE-KEY');
+      expect(res.body.data.maxUsers).toBe(75);
+      expect(res.body.data.isActive).toBe(true);
+      expect(res.body.data.teamName).toBe('Test Team');
+
+      // Cleanup
+      user.teamId = null;
+      await user.save();
+      await License.destroy({ where: { teamId: 5 } });
+    });
+  });
+
+  describe('License Model - Edge Cases', () => {
+    /**
+     * Test: Verify unique constraint on teamId
+     * Purpose: Tests that each team can only have one license
+     */
+    test('should enforce unique constraint on teamId', async () => {
+      await License.create({
+        teamId: 100,
+        teamName: 'Team A',
+        licenseKey: 'KEY-A',
+        maxUsers: 50,
+        expirationDate: new Date('2026-12-31'),
+        isActive: true
+      });
+
+      await expect(
+        License.create({
+          teamId: 100,
+          teamName: 'Team B',
+          licenseKey: 'KEY-B',
+          maxUsers: 50,
+          expirationDate: new Date('2026-12-31'),
           isActive: true
-        });
+        })
+      ).rejects.toThrow();
 
-        await License.create({
-          teamName: 'Team 2',
-          licenseKey: 'KEY-2',
-          maxUsers: 5,
-          isActive: false
-        });
+      // Cleanup
+      await License.destroy({ where: { teamId: 100 } });
+    });
 
-        const res = await request(app)
-          .get('/api/v1/licenses/statistics')
-          .set('Authorization', `Bearer ${adminToken}`);
-
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.data).toHaveProperty('total');
-        expect(res.body.data).toHaveProperty('active');
-        expect(res.body.data).toHaveProperty('expired');
-        expect(res.body.data).toHaveProperty('revoked');
-        expect(res.body.data).toHaveProperty('totalAssignedUsers');
+    /**
+     * Test: Verify unique constraint on licenseKey
+     * Purpose: Tests that each license key can only be used once
+     */
+    test('should enforce unique constraint on licenseKey', async () => {
+      await License.create({
+        teamId: 101,
+        teamName: 'Team A',
+        licenseKey: 'DUPLICATE-KEY',
+        maxUsers: 50,
+        expirationDate: new Date('2026-12-31'),
+        isActive: true
       });
 
-      /**
-       * Test: Verify non-admin cannot get statistics
-       * Purpose: Tests that non-admin users are denied access to license statistics
-       */
-      test('should deny non-admin from getting statistics', async () => {
-        const res = await request(app)
-          .get('/api/v1/licenses/statistics')
-          .set('Authorization', `Bearer ${goonToken}`);
+      await expect(
+        License.create({
+          teamId: 102,
+          teamName: 'Team B',
+          licenseKey: 'DUPLICATE-KEY',
+          maxUsers: 50,
+          expirationDate: new Date('2026-12-31'),
+          isActive: true
+        })
+      ).rejects.toThrow();
 
-        expect(res.statusCode).toBe(403);
+      // Cleanup
+      await License.destroy({ where: { teamId: 101 } });
+    });
+
+    /**
+     * Test: Verify license can have notes
+     * Purpose: Tests that optional notes field works correctly
+     */
+    test('should allow creating license with notes', async () => {
+      const license = await License.create({
+        teamId: 103,
+        teamName: 'Test Team',
+        licenseKey: 'KEY-WITH-NOTES',
+        maxUsers: 50,
+        expirationDate: new Date('2026-12-31'),
+        isActive: true,
+        notes: 'This is a test license with notes'
       });
+
+      expect(license.notes).toBe('This is a test license with notes');
+
+      // Cleanup
+      await License.destroy({ where: { teamId: 103 } });
+    });
+
+    /**
+     * Test: Verify license defaults
+     * Purpose: Tests that default values are applied correctly
+     */
+    test('should apply default values for isActive and maxUsers', async () => {
+      const license = await License.create({
+        teamId: 104,
+        teamName: 'Test Team',
+        licenseKey: 'KEY-DEFAULTS',
+        expirationDate: new Date('2026-12-31')
+      });
+
+      expect(license.isActive).toBe(true);
+      expect(license.maxUsers).toBe(50);
+
+      // Cleanup
+      await License.destroy({ where: { teamId: 104 } });
     });
   });
 });

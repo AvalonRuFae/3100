@@ -1,27 +1,67 @@
-const { License, User } = require('../models');
-const { Op } = require('sequelize');
-const crypto = require('crypto');
+const { License } = require('../models');
 const logger = require('../utils/logger');
+const { validateLicenseKey } = require('../middleware/validateLicense');
 
 class LicenseService {
-  generateLicenseKey(teamName) {
-    const prefix = 'DSCPMS';
-    const year = new Date().getFullYear();
-    const random = crypto.randomBytes(8).toString('hex').toUpperCase();
-    return `${prefix}-${year}-${random}`;
-  }
-
-  async createLicense(licenseData) {
+  /**
+   * Validate license key against environment configuration
+   * and check if it's already assigned to a team
+   * 
+   * @param {string} licenseKey - License key to validate
+   * @returns {Object} Validation result with license config if valid
+   */
+  async validateForTeamCreation(licenseKey) {
     try {
-      // Generate license key if not provided
-      if (!licenseData.licenseKey) {
-        licenseData.licenseKey = this.generateLicenseKey(licenseData.teamName);
+      // First check if license exists in environment config
+      const licenseConfig = validateLicenseKey(licenseKey);
+      
+      if (!licenseConfig) {
+        return {
+          valid: false,
+          error: 'Invalid or expired license key'
+        };
       }
 
-      const license = await License.create(licenseData);
+      // Check if license is already assigned to a team
+      const existingLicense = await License.findOne({
+        where: { licenseKey }
+      });
 
-      logger.info(`License created: ${license.licenseKey} for ${license.teamName}`);
+      if (existingLicense) {
+        return {
+          valid: false,
+          error: 'License key is already assigned to another team'
+        };
+      }
 
+      return {
+        valid: true,
+        config: licenseConfig
+      };
+    } catch (error) {
+      logger.error('License validation error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new license record when assigning to a team
+   * 
+   * @param {Object} licenseData - License data including teamId, key, maxUsers, expiryDate
+   * @returns {Object} Created license
+   */
+  async createLicenseForTeam(licenseData) {
+    try {
+      const license = await License.create({
+        teamId: licenseData.teamId,
+        teamName: licenseData.teamName,
+        licenseKey: licenseData.key,
+        maxUsers: licenseData.maxUsers,
+        expirationDate: licenseData.expiryDate,
+        isActive: true
+      });
+
+      logger.info(`License ${license.licenseKey} assigned to team ${license.teamName}`);
       return license;
     } catch (error) {
       logger.error('Create license error:', error);
@@ -29,263 +69,49 @@ class LicenseService {
     }
   }
 
-  async getAllLicenses(filters = {}) {
+  /**
+   * Get license by team ID
+   * 
+   * @param {number} teamId - Team ID
+   * @returns {Object|null} License or null if not found
+   */
+  async getLicenseByTeamId(teamId) {
     try {
-      const where = {};
-
-      if (filters.isActive !== undefined) {
-        // Convert string "true"/"false" to boolean
-        where.isActive = filters.isActive === 'true' || filters.isActive === true;
-      }
-
-      if (filters.teamName) {
-        where.teamName = {
-          [Op.like]: `%${filters.teamName}%`
-        };
-      }
-
-      const licenses = await License.findAll({
-        where,
-        include: [{
-          model: User,
-          through: { attributes: [] },
-          attributes: ['id', 'username', 'email', 'role']
-        }],
-        order: [['created_at', 'DESC']]
+      const license = await License.findOne({
+        where: { teamId }
       });
-
-      return licenses;
-    } catch (error) {
-      logger.error('Get all licenses error:', error);
-      throw error;
-    }
-  }
-
-  async getLicenseById(licenseId) {
-    try {
-      const license = await License.findByPk(licenseId, {
-        include: [{
-          model: User,
-          through: { attributes: ['created_at'] },
-          attributes: ['id', 'username', 'email', 'role']
-        }]
-      });
-
-      if (!license) {
-        throw new Error('License not found');
-      }
-
       return license;
     } catch (error) {
-      logger.error('Get license error:', error);
+      logger.error('Get license by team error:', error);
       throw error;
     }
   }
 
-  async updateLicense(licenseId, updates) {
+  /**
+   * Check if license is valid (active and not expired)
+   * 
+   * @param {number} teamId - Team ID
+   * @returns {boolean} True if valid, false otherwise
+   */
+  async isLicenseValid(teamId) {
     try {
-      const license = await License.findByPk(licenseId);
-
-      if (!license) {
-        throw new Error('License not found');
+      const license = await this.getLicenseByTeamId(teamId);
+      
+      if (!license || !license.isActive) {
+        return false;
       }
 
-      await license.update(updates);
-
-      logger.info(`License updated: ${license.licenseKey}`);
-
-      return license;
-    } catch (error) {
-      logger.error('Update license error:', error);
-      throw error;
-    }
-  }
-
-  async revokeLicense(licenseId) {
-    try {
-      const license = await License.findByPk(licenseId);
-
-      if (!license) {
-        throw new Error('License not found');
+      // Check expiration
+      if (license.expirationDate && new Date(license.expirationDate) < new Date()) {
+        // Auto-deactivate expired license
+        await license.update({ isActive: false });
+        return false;
       }
-
-      license.isActive = false;
-      await license.save();
-
-      logger.info(`License revoked: ${license.licenseKey}`);
-
-      return license;
-    } catch (error) {
-      logger.error('Revoke license error:', error);
-      throw error;
-    }
-  }
-
-  async deleteLicense(licenseId) {
-    try {
-      const license = await License.findByPk(licenseId);
-
-      if (!license) {
-        throw new Error('License not found');
-      }
-
-      await license.destroy();
-
-      logger.info(`License deleted: ${license.licenseKey}`);
 
       return true;
     } catch (error) {
-      logger.error('Delete license error:', error);
-      throw error;
-    }
-  }
-
-  async assignLicenseToUser(licenseId, userId) {
-    try {
-      const license = await License.findByPk(licenseId);
-      const user = await User.findByPk(userId);
-
-      if (!license) {
-        throw new Error('License not found');
-      }
-
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      if (!license.isActive) {
-        throw new Error('License is not active');
-      }
-
-      // Check if license has reached max users
-      const currentUsers = await license.countUsers();
-      if (currentUsers >= license.maxUsers) {
-        throw new Error(`License has reached maximum users (${license.maxUsers})`);
-      }
-
-      await user.addLicense(license);
-
-      logger.info(`License ${license.licenseKey} assigned to user ${user.username}`);
-
-      return true;
-    } catch (error) {
-      logger.error('Assign license error:', error);
-      throw error;
-    }
-  }
-
-  async removeLicenseFromUser(licenseId, userId) {
-    try {
-      const license = await License.findByPk(licenseId);
-      const user = await User.findByPk(userId);
-
-      if (!license) {
-        throw new Error('License not found');
-      }
-
-      if (!user) {
-        throw new Error('User not found');
-      }
-
-      await user.removeLicense(license);
-
-      logger.info(`License ${license.licenseKey} removed from user ${user.username}`);
-
-      return true;
-    } catch (error) {
-      logger.error('Remove license error:', error);
-      throw error;
-    }
-  }
-
-  async validateUserLicense(userId) {
-    try {
-      const user = await User.findByPk(userId, {
-        include: [{
-          model: License,
-          through: { attributes: [] }
-        }]
-      });
-
-      if (!user) {
-        return { valid: false, reason: 'User not found' };
-      }
-
-      if (!user.Licenses || user.Licenses.length === 0) {
-        return { valid: false, reason: 'No license assigned' };
-      }
-
-      // Check if user has at least one active, non-expired license
-      const validLicense = user.Licenses.find(license => 
-        license.isActive && 
-        (!license.expirationDate || new Date(license.expirationDate) > new Date())
-      );
-
-      if (validLicense) {
-        return {
-          valid: true,
-          license: validLicense
-        };
-      }
-
-      return { valid: false, reason: 'No valid license' };
-    } catch (error) {
-      logger.error('Validate user license error:', error);
-      throw error;
-    }
-  }
-
-  async checkExpiringLicenses(daysThreshold = 7) {
-    try {
-      const thresholdDate = new Date();
-      thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
-
-      const expiringLicenses = await License.findAll({
-        where: {
-          isActive: true,
-          expirationDate: {
-            [Op.lte]: thresholdDate,
-            [Op.gte]: new Date()
-          }
-        },
-        include: [{
-          model: User,
-          through: { attributes: [] },
-          attributes: ['id', 'username', 'email']
-        }]
-      });
-
-      return expiringLicenses;
-    } catch (error) {
-      logger.error('Check expiring licenses error:', error);
-      throw error;
-    }
-  }
-
-  async getLicenseStatistics() {
-    try {
-      const total = await License.count();
-      const active = await License.count({ where: { isActive: true } });
-      const expired = await License.count({
-        where: {
-          expirationDate: {
-            [Op.lt]: new Date()
-          }
-        }
-      });
-
-      const totalUsers = await require('../database/connection').sequelize.models.UserLicense.count();
-
-      return {
-        total,
-        active,
-        expired,
-        revoked: total - active - expired,
-        totalAssignedUsers: totalUsers
-      };
-    } catch (error) {
-      logger.error('Get license statistics error:', error);
-      throw error;
+      logger.error('License validation error:', error);
+      return false;
     }
   }
 }

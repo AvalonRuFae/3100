@@ -3,9 +3,11 @@ const router = express.Router();
 const TaskController = require('../controllers/TaskController');
 const { authenticateToken, authorize } = require('../middleware/auth');
 const { validate, taskValidation } = require('../middleware/validation');
+const validateLicense = require('../middleware/validateLicense');
 
-// All routes require authentication
+// All routes require authentication and valid license
 router.use(authenticateToken);
+router.use(validateLicense);
 
 // Get kanban board
 router.get('/board', TaskController.getKanbanBoard);
