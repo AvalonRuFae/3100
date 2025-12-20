@@ -1,25 +1,25 @@
-# UML Diagrams for Demon Slayer Corps Project Management System
+# UML Diagrams for Rikugan
 
-This document contains PlantUML diagrams that visualize the system architecture, component relationships, and user interactions for the DSCPMS.
+This document contains PlantUML diagrams that visualize the system architecture, component relationships, and user interactions for Rikugan.
 
 ## Business Context Diagram
 
 ```plantuml
-@startuml DSCPMS_Business_Context
+@startuml Rikugan_Business_Context
 !theme plain
-title DSCPMS Business Context
+title Rikugan Business Context
 
 actor "Goons\n(Junior Programmers)" as Goons
 actor "Hashira\n(Senior Programmers)" as Hashira
 actor "Oyakatasama\n(System Administrators)" as Admin
 
-package "DSCPMS System" {
-  [Task & Bounty Management System] as DSCPMS
+package "Rikugan System" {
+  [Task & Bounty Management System] as Rikugan
 }
 
-Goons --> DSCPMS : Browse tasks\nAccept assignments\nTrack progress\nManage earnings
-Hashira --> DSCPMS : Create tasks\nSet bounties\nMonitor team\nAll Goon functions
-Admin --> DSCPMS : User management\nLicense distribution\nSystem configuration\nFull access
+Goons --> Rikugan : Browse tasks\nAccept assignments\nTrack progress\nManage earnings
+Hashira --> Rikugan : Create tasks\nSet bounties\nMonitor team\nAll Goon functions
+Admin --> Rikugan : User management\nLicense distribution\nSystem configuration\nFull access
 
 @enduml
 ```
@@ -27,9 +27,9 @@ Admin --> DSCPMS : User management\nLicense distribution\nSystem configuration\n
 ## Technical Context Diagram
 
 ```plantuml
-@startuml DSCPMS_Technical_Context
+@startuml Rikugan_Technical_Context
 !theme plain
-title DSCPMS Technical Context
+title Rikugan Technical Context
 
 actor "Web Users" as Users
 package "Client Environment" {
@@ -64,9 +64,9 @@ Backend --> ExtLib : JWT, bcrypt, etc.
 ## Component Diagram - System Architecture
 
 ```plantuml
-@startuml DSCPMS_Component_Architecture
+@startuml Rikugan_Component_Architecture
 !theme plain
-title Demon Slayer Corps Project Management System - Component Architecture
+title Rikugan - Component Architecture
 
 package "Client Layer" {
   [Web Browser] as Browser
@@ -162,9 +162,9 @@ Frontend --> Vite : Build Process
 ## Use Case Diagram - User Interactions
 
 ```plantuml
-@startuml DSCPMS_Use_Cases
+@startuml Rikugan_Use_Cases
 !theme plain
-title Demon Slayer Corps Project Management System - Use Cases
+title Rikugan - Use Cases
 
 left to right direction
 
@@ -172,7 +172,7 @@ actor "Goon\n(Junior Programmer)" as Goon
 actor "Hashira\n(Senior Programmer)" as Hashira
 actor "Oyakatasama\n(Administrator)" as Admin
 
-rectangle "DSCPMS System" {
+rectangle "Rikugan System" {
   usecase "Login to System" as Login
   usecase "View Available Tasks" as ViewTasks
   usecase "Select Task" as SelectTask
@@ -246,7 +246,7 @@ ReviewTask ..> ManageBounty : affects
 The backend follows the Model-View-Controller (MVC) pattern, providing clear separation of concerns:
 
 ```plantuml
-@startuml DSCPMS_MVC_Architecture
+@startuml Rikugan_MVC_Architecture
 !theme plain
 title Backend MVC Architecture
 
@@ -318,9 +318,9 @@ ErrorView --> Client : Error Response
 ## Class Diagram - Core Domain Models
 
 ```plantuml
-@startuml DSCPMS_Class_Diagram
+@startuml Rikugan_Class_Diagram
 !theme plain
-title Demon Slayer Corps Project Management System - Class Diagram
+title Rikugan - Class Diagram
 
 class Team {
   -id: number
@@ -495,7 +495,7 @@ License }o--|| LicenseStatus : has
 ## Sequence Diagram - User Authentication Flow
 
 ```plantuml
-@startuml DSCPMS_User_Authentication_Sequence
+@startuml Rikugan_User_Authentication_Sequence
 !theme plain
 title User Authentication Flow
 
@@ -518,11 +518,109 @@ F->>F: Store token in localStorage
 F-->>U: Redirect to role-appropriate dashboard
 @enduml
 ```
+## Sequence Diagram - Admin User Creation and Management Flow
+
+```plantuml
+@startuml Rikugan_User_Registration_Flow
+!theme plain
+title User Registration Flow (Admin Creates User Account)
+
+actor "Oyakatasama\n(Admin)" as Admin
+participant "Frontend\nDashboard" as F
+participant "API Gateway" as API
+participant "Auth Middleware" as Auth
+participant "User Controller" as UC
+participant "User Service" as US
+participant "Database" as DB
+participant "Email Service\n(Optional)" as Email
+
+== User Registration Request ==
+Admin -> F: Navigate to User Management
+F -> API: GET /api/v1/users
+API -> Auth: verifyJWT(token)
+Auth -> Auth: check role = OYAKATASAMA
+alt Not Admin
+    Auth --> API: 403 Forbidden
+    API --> F: error
+    F --> Admin: "Access Denied"
+else Admin Authorized
+    Auth --> API: authorized
+    API -> DB: SELECT users
+    DB --> API: user list
+    API --> F: user list
+    F --> Admin: Display user management page
+end
+
+== Create New User ==
+Admin -> F: Fill registration form\n(username, email, password, role)
+F -> F: validate input format\n(email, password strength)
+
+alt Validation Fails
+    F --> Admin: Show validation errors
+else Validation Passes
+    F -> API: POST /api/v1/auth/register\n{username, email, password, role}
+    API -> Auth: verifyJWT(token)
+    Auth -> Auth: check role = OYAKATASAMA
+    
+    alt Not Admin
+        Auth --> API: 403 Forbidden
+        API --> F: error
+        F --> Admin: "Only admins can create users"
+    else Admin Authorized
+        Auth --> API: authorized
+        API -> UC: registerUser(userData)
+        UC -> US: createUser(userData)
+        
+        == Database Validation ==
+        US -> DB: SELECT users WHERE username=? OR email=?
+        DB --> US: existing users
+        
+        alt User Already Exists
+            US --> UC: error "User already exists"
+            UC --> API: 409 Conflict
+            API --> F: error
+            F --> Admin: "Username or email already taken"
+        else User Doesn't Exist
+            US -> US: hashPassword(password)\nusing bcrypt
+            US -> DB: INSERT INTO users\n(username, email, password_hash, role)
+            DB --> US: user_id created
+            
+            == Optional Email Notification ==
+            US -> Email: sendWelcomeEmail(email, credentials)
+            Email --> US: email sent (async)
+            
+            US --> UC: user created successfully
+            UC -> UC: sanitize user data\n(remove password)
+            UC --> API: 201 Created + user data
+            API --> F: success response
+            F --> Admin: "User created successfully"
+            F -> F: refresh user list
+            F -> API: GET /api/v1/users
+            API -> DB: SELECT users
+            DB --> API: updated user list
+            API --> F: user list
+            F --> Admin: Display updated user list
+        end
+    end
+end
+
+== New User First Login ==
+note over Admin, DB
+  The newly created user can now log in
+  with their credentials. They are not 
+  required to change password on first login
+  unless configured otherwise.
+end note
+
+@enduml
+```
+
+
 
 ## Sequence Diagram - Task Assignment Flow
 
 ```plantuml
-@startuml DSCPMS_Task_Assignment_Sequence
+@startuml Rikugan_Task_Assignment_Sequence
 !theme plain
 title Task Assignment and Completion Flow
 
@@ -585,7 +683,7 @@ F --> G: Task completed, bounty awarded
 ## Sequence Diagram - Notification System Flow
 
 ```plantuml
-@startuml DSCPMS_Notification_Flow
+@startuml Rikugan_Notification_Flow
 !theme plain
 title Real-time Notification System Flow
 
@@ -645,12 +743,80 @@ F --> U: Display deadline alerts
 @enduml
 ```
 
+## Sequence Diagram - License Flow
+
+```plantuml
+@startuml Rikugan_License_Flow
+!theme plain
+title License Validation and Team Access Control Flow
+
+actor "Oyakatasama\n(Admin)" as Admin
+actor "Team Member\n(Goon/Hashira)" as User
+participant "Frontend" as F
+participant "API Gateway" as API
+participant "Auth Middleware" as Auth
+participant "Database" as DB
+
+== License Issuance (Admin) ==
+Admin -> F: Create team with license
+F -> API: POST /api/v1/teams
+API -> Auth: verifyRole(OYAKATASAMA)
+Auth --> API: authorized
+API -> DB: INSERT INTO teams (name, description)
+DB --> API: team_id
+API -> DB: INSERT INTO licenses (team_id, license_key, status='active')
+DB --> API: license created
+API --> F: success response
+F --> Admin: Team and license created
+
+== User Login with License Check ==
+User -> F: Enter credentials
+F -> API: POST /api/v1/auth/login
+API -> DB: SELECT user, team, license WHERE username=?
+DB --> API: user + team + license data
+
+alt License Exists and Active
+    API -> API: generateJWT(user, team, role)
+    API --> F: JWT token
+    F --> User: Access granted
+else No License or Revoked
+    API --> F: 403 Forbidden
+    F --> User: "Team license missing or revoked"
+end
+
+== Feature Access (Automatic Validation) ==
+User -> F: Access any feature
+F -> API: API call with JWT
+API -> Auth: validateJWT(token)
+Auth -> Auth: check token validity
+alt JWT valid
+    Auth --> API: proceed
+    API --> F: feature response
+else JWT invalid
+    Auth --> API: 401 Unauthorized
+    API --> F: error
+    F --> User: "Please login again"
+end
+
+== License Revocation (Admin) ==
+Admin -> F: Revoke team license
+F -> API: PUT /api/v1/licenses/{teamId}/revoke
+API -> Auth: verifyRole(OYAKATASAMA)
+API -> DB: UPDATE licenses SET status='revoked'
+DB --> API: success
+API --> F: revoked
+F --> Admin: License revoked
+note right: Users must re-login to be logged out
+
+@enduml
+```
+
 ## Deployment Diagram - Docker Architecture
 
 ```plantuml
-@startuml DSCPMS_Deployment_Diagram
+@startuml Rikugan_Deployment_Diagram
 !theme plain
-title DSCPMS Deployment Architecture
+title Rikugan Deployment Architecture
 
 package "Development Environment" {
   [Local Dev Tools\n(Node.js, Git, VSCode)] as DevTools
@@ -705,9 +871,9 @@ end note
 ## Domain Model Diagram
 
 ```plantuml
-@startuml DSCPMS_Domain_Model
+@startuml Rikugan_Domain_Model
 !theme plain
-title DSCPMS Domain Model
+title Rikugan Domain Model
 
 class Team {
   -id: number
@@ -813,7 +979,7 @@ DBContainer : "Port 3306\n(MySQL)"
 ' Environment variables
 FrontendContainer : "VITE_API_URL=http://localhost:5000"
 BackendContainer : "DB_HOST=mysql_container\nDB_PORT=3306\nJWT_SECRET=dev_secret"
-DBContainer : "MYSQL_ROOT_PASSWORD=rootpassword\nMYSQL_DATABASE=dscpms"
+DBContainer : "MYSQL_ROOT_PASSWORD=rootpassword\nMYSQL_DATABASE=rikugan"
 
 @enduml
 ```
@@ -821,7 +987,7 @@ DBContainer : "MYSQL_ROOT_PASSWORD=rootpassword\nMYSQL_DATABASE=dscpms"
 ## Database Entity Relationship Diagram
 
 ```plantuml
-@startuml DSCPMS_ERD
+@startuml Rikugan_ERD
 !theme plain
 title Database Entity Relationship Diagram
 
@@ -914,4 +1080,4 @@ tasks ||--|| bounties : "task_id"
 3. Generate PNG/SVG output for documentation
 4. Include generated diagrams in your project presentation
 
-These diagrams provide a comprehensive visual representation of your Demon Slayer Corps Project Management System architecture and will significantly enhance your project documentation for academic evaluation.
+These diagrams provide a comprehensive visual representation of your Rikugan architecture and will significantly enhance your project documentation for academic evaluation.

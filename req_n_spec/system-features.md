@@ -7,7 +7,7 @@ User Authentication and Authorization
 ### Description and Priority
 **Priority: High** - Essential for system security and role-based access control
 
-This feature provides secure user registration, login, and role-based access control for the three user types: Goons, Hashira, and Oyakatasama. The system implements license-based access management to control who can join the "Demon Slayer Corps."
+This feature provides secure user registration, login, and role-based access control for the three user types: Goons, Hashira, and Oyakatasama. The system implements team-based license validation to control task creation limits.
 
 ### Stimulus/Response Sequences
 1. User attempts to access the system → System redirects to login page if not authenticated
@@ -23,7 +23,6 @@ The system shall allow administrators (Oyakatasama) to create new user accounts 
 - Email address (valid format)
 - Initial password (minimum 8 characters)
 - Assigned role (Goon, Hashira, or Oyakatasama)
-- License allocation for system access
 
 #### REQ-2: User Login
 The system shall authenticate users using username/email and password combination and maintain session state for 8 hours of inactivity.
@@ -35,7 +34,7 @@ The system shall enforce the following access levels:
 - **Oyakatasama**: All functions plus user management and system administration
 
 #### REQ-4: License Management
-The system shall implement a license-based access control where only users with valid licenses can access the system. Without a valid license, the entire project shall be limited to creating no more than 3 tasks total.
+The system shall implement a team-based license system where one hard-coded license key is configured per team deployment. Without a valid license, the entire project shall be inaccessible. The license is managed through environment configuration, not through the admin interface.
 
 Task Management System
 ----------------------

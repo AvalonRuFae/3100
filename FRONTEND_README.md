@@ -1,6 +1,6 @@
-# Demon Slayer Corps Project Management System
+# Rikugan
 
-A React-based bounty management system for programming teams, inspired by the Demon Slayer Corps hierarchy. This application allows teams to manage tasks as bounties with different user roles and reward systems.
+A React-based bounty management system for programming teams. This application allows teams to manage tasks as bounties with different user roles and reward systems.
 
 ## 🚀 Features
 
@@ -88,9 +88,9 @@ Right-click `start-frontend.ps1` and select "Run with PowerShell"
 The application uses mock authentication. You can login with any email/password combination for testing:
 
 **Example Credentials**:
-- Email: `admin@dscpms.com`
+- Email: `admin@rikugan.com`
 - Password: `password123`
-- Email: `goon@dscpms.com`
+- Email: `goon@rikugan.com`
 - Password: `demo123`
 
 ## 🎮 How to Use

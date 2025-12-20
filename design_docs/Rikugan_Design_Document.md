@@ -1,4 +1,4 @@
-# Rikugan - Architecture and Design Document
+# Rikugan - Architecture and Design Document v1
 
 ## Table of Contents
 
@@ -154,8 +154,6 @@ Experienced developers who create and manage tasks, set bounty amounts, and moni
 **Oyakatasama (System Administrators)**
 System administrators responsible for user account management, license distribution, system configuration, and overall platform oversight. They have full access to all system functions.
 
-**Course Instructors**
-Academic stakeholders who evaluate the system's design, implementation quality, and educational value. They may also use the system for managing course-related programming assignments.
 
 ### 3.2. Technical Context
 
@@ -787,81 +785,28 @@ User interaction with Rikugan involves several key workflows that demonstrate th
 
 ![alt text](Auth.png)
 
-### 6.2. Task Assignment and Completion
+### 6.2. User Registration Flow
+
+![alt text](user_registration_flow.png)
+
+**Registration Flow Key Points:**
+- Only Oyakatasama (administrators) can create new user accounts
+- Username and email uniqueness is enforced at the database level
+- Passwords are hashed using bcrypt before storage
+- Role assignment (Goon, Hashira, Oyakatasama) is done during registration
+- Optional email notification can be sent to new users with their login credentials
+- No self-registration capability for security reasons
+- License is team-based, not assigned per user
+
+### 6.3. Task Assignment and Completion
 
 ![alt text](TaskFlow.png)
 
-### 6.3. Notification System Flow
+### 6.4. Notification System Flow
 
 ![alt text](notificationflow.png)
 
-### 6.4. License Validation and Team Access Control
-
-```plantuml
-@startuml Rikugan_License_Flow
-!theme plain
-title License Validation and Team Access Control Flow
-
-actor "Oyakatasama\n(Admin)" as Admin
-actor "Team Member\n(Goon/Hashira)" as User
-participant "Frontend" as F
-participant "API Gateway" as API
-participant "Auth Middleware" as Auth
-participant "Database" as DB
-
-== License Issuance (Admin) ==
-Admin -> F: Create team with license
-F -> API: POST /api/v1/teams
-API -> Auth: verifyRole(OYAKATASAMA)
-Auth --> API: authorized
-API -> DB: INSERT INTO teams (name, description)
-DB --> API: team_id
-API -> DB: INSERT INTO licenses (team_id, license_key, status='active')
-DB --> API: license created
-API --> F: success response
-F --> Admin: Team and license created
-
-== User Login with License Check ==
-User -> F: Enter credentials
-F -> API: POST /api/v1/auth/login
-API -> DB: SELECT user, team, license WHERE username=?
-DB --> API: user + team + license data
-
-alt License Exists and Active
-    API -> API: generateJWT(user, team, role)
-    API --> F: JWT token
-    F --> User: Access granted
-else No License or Revoked
-    API --> F: 403 Forbidden
-    F --> User: "Team license missing or revoked"
-end
-
-== Feature Access (Automatic Validation) ==
-User -> F: Access any feature
-F -> API: API call with JWT
-API -> Auth: validateJWT(token)
-Auth -> Auth: check token validity
-alt JWT valid
-    Auth --> API: proceed
-    API --> F: feature response
-else JWT invalid
-    Auth --> API: 401 Unauthorized
-    API --> F: error
-    F --> User: "Please login again"
-end
-
-== License Revocation (Admin) ==
-Admin -> F: Revoke team license
-F -> API: PUT /api/v1/licenses/{teamId}/revoke
-API -> Auth: verifyRole(OYAKATASAMA)
-API -> DB: UPDATE licenses SET status='revoked'
-DB --> API: success
-API --> F: revoked
-F --> Admin: License revoked
-note right: Users must re-login to be logged out
-
-@enduml
-```
+### 6.5. License Validation and Team Access Control
 
 ![alt text](license_flow.png)
 

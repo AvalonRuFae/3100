@@ -14,7 +14,7 @@ Database Requirements
 - User table: id, username, email, password_hash, role, balance, created_at, updated_at
 - Tasks table: id, title, description, bounty_amount, deadline, status, created_by, assigned_to, created_at, updated_at
 - Notifications table: id, user_id, type, message, read_status, created_at
-- Licenses table: id, user_id, license_key, expiry_date, status, created_at
+- Licenses table: id, license_key, expiry_date, status, max_users, created_at (one record per team deployment)
 
 **Data Integrity Requirements:**
 - Foreign key constraints for data relationships
@@ -125,44 +125,5 @@ Testing Requirements
 - Sample tasks and bounties for testing scenarios
 - Database cleanup procedures between test runs
 
-**Testing Environment:**
-- Separate test database instance
-- Mock external services and dependencies
-- Automated test data generation and cleanup
-- Performance testing under simulated load
 
-Backup and Recovery Requirements
---------------------------------
 
-**Development Environment:**
-- Daily automated database backups
-- Source code backup through Git repository
-- Configuration file backup and version control
-- Recovery procedures documented and tested
-
-**Data Recovery:**
-- Point-in-time recovery capability for database
-- Rollback procedures for problematic deployments
-- Data export functionality for migration purposes
-- Recovery testing performed monthly during development
-
-Monitoring and Logging Requirements
-----------------------------------
-
-**Application Logging:**
-- Structured logging with appropriate log levels (DEBUG, INFO, WARN, ERROR)
-- User action logging for audit purposes
-- Performance metrics logging for optimization
-- Error logging with stack traces for debugging
-
-**System Monitoring:**
-- Database performance monitoring
-- Application response time tracking
-- Resource utilization monitoring (CPU, memory, disk)
-- User activity monitoring for usage analytics
-
-**Log Management:**
-- Log rotation to prevent disk space issues
-- Log retention policy (30 days for development)
-- Centralized logging for multi-container environment
-- Log analysis tools for troubleshooting

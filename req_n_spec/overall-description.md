@@ -3,12 +3,12 @@ Overall Description
 
 Product Perspective
 -------------------
-The Demon Slayer Corps Project Management System (DSCPMS) is a new, self-contained web-based application designed specifically for project management in software development environments. The system draws inspiration from popular task management tools like Trello and Jira but incorporates unique gamification elements through a bounty-based reward system.
+Rikugan is a new, self-contained web-based application designed specifically for project management in software development environments. The system draws inspiration from popular task management tools like Trello and Jira but incorporates unique gamification elements through a bounty-based reward system.
 
 **System Context Diagram:**
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    DSCPMS                               │
+│                    Rikugan                              │
 │  ┌─────────────────┐  ┌─────────────────┐             │
 │  │   Web Frontend  │  │   Backend API   │             │
 │  │   (React/Vite)  │◄─┤   (Node.js)     │             │
@@ -29,12 +29,12 @@ The Demon Slayer Corps Project Management System (DSCPMS) is a new, self-contain
 
 Product Functions
 -----------------
-The DSCPMS provides the following major functions:
+Rikugan provides the following major functions:
 
 **Authentication & Authorization:**
 - Secure user registration and login
 - Role-based access control (Goons, Hashira, Oyakatasama)
-- License-based system access management
+- Team-based license validation for task creation limits
 
 **Task Management:**
 - Create and manage task bounties with monetary rewards
@@ -77,7 +77,7 @@ User Classes and Characteristics
 **Oyakatasama (Administrators)**
 - *Frequency of Use:* Regular but less frequent than other roles
 - *Technical Expertise:* System administration and project oversight
-- *Primary Functions:* System administration, license management, user account control
+- *Primary Functions:* System administration, user account control, system configuration
 - *Characteristics:* Project owners and system administrators
 - *Security Level:* Full system administrative privileges
 
@@ -114,8 +114,8 @@ Design and Implementation Constraints
 - User data must be protected according to basic privacy standards
 
 **Resource Constraints:**
-- Development timeline: One week maximum
-- Team size: Undergraduate student project (1-4 developers)
+- Development timeline: One month maximum
+- Team size: Undergraduate student project (5 developers)
 - Budget: Educational project with no commercial constraints
 - Hosting: Development environment only (no production deployment required)
 
@@ -128,9 +128,7 @@ User Documentation
 The following documentation will be delivered with the system:
 
 **End-User Documentation:**
-- User manual covering all three role types with screenshots
-- Quick start guide for new users
-- Role-specific feature guides
+- Demo Video of Regular usage
 
 **Technical Documentation:**
 - API documentation for backend services

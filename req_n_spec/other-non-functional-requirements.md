@@ -18,7 +18,6 @@ Performance Requirements
 **Scalability Requirements:**
 - User capacity: System designed to handle up to 200 registered users
 - Task capacity: Support for up to 1000 active tasks simultaneously
-- Data retention: Maintain 6 months of historical data without performance degradation
 
 **Resource Usage:**
 - Memory usage: Frontend application should use less than 100MB RAM per browser tab
@@ -27,12 +26,6 @@ Performance Requirements
 
 Safety Requirements
 -------------------
-
-**Data Protection:**
-- Prevent data loss through regular automated backups
-- Implement database transaction rollback capabilities
-- Provide data validation to prevent corruption
-- Maintain data integrity during concurrent operations
 
 **User Safety Measures:**
 - Prevent unauthorized access to sensitive user information
@@ -129,10 +122,10 @@ Business Rules
 - Only administrators can manually adjust user account balances
 
 **License and Access Rules:**
-- All users must have valid licenses to access the system
-- License validation occurs at every login attempt
-- Expired licenses prevent system access until renewed
-- Only Oyakatasama can issue, renew, or revoke licenses
+- Each team deployment uses a single hard-coded license key
+- License validation occurs at system startup
+- Expired or invalid licenses prevent all access to the system
+- License keys are configured through environment variables by developers, not managed through the admin interface
 
 **Notification Rules:**
 - Task deadline reminders sent 24 hours before due date

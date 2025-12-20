@@ -1,0 +1,983 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{tocloft}
+
+% Page style
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Rikugan SRS}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Rikugan - Software Requirements Specification},
+    pdfpagemode=FullScreen,
+}
+
+% Code listings setup
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red}
+}
+
+\title{
+    \vspace{2cm}
+    \Huge \textbf{Software Requirements Specification}\\
+    \vspace{0.5cm}
+    \LARGE for\\
+    \vspace{0.5cm}
+    \Huge \textbf{Rikugan}\\
+    \vspace{0.3cm}
+    \Large A Bounty-Based Project Management System\\
+    \vspace{2cm}
+}
+
+\author{
+    Version 1.0\\
+    \vspace{0.5cm}
+    Prepared by CSCI3100 Development Team\\
+    \vspace{0.3cm}
+    \today
+}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+\subsection{Purpose}
+This Software Requirements Specification (SRS) document specifies the requirements for Rikugan, version 1.0. The system is designed as a bounty-based project management application that combines traditional Kanban board functionality with gamified task assignment and reward mechanisms. This SRS covers the complete web-based application including user authentication, task management, role-based access control, and reward tracking systems.
+
+\subsection{Document Conventions}
+This document follows the IEEE 830-1998 standard for software requirements specifications. The following typographical conventions are used:
+
+\begin{itemize}
+    \item \textbf{Bold text} indicates system components, user interface elements, and important terms
+    \item \textit{Italic text} represents user actions and system responses
+    \item \texttt{Monospace text} denotes code elements, database fields, and technical specifications
+    \item Requirements are numbered using the format REQ-XX for functional requirements and NFR-XX for non-functional requirements
+    \item Priority levels are classified as High (essential for system operation), Medium (important but not critical), and Low (nice-to-have features)
+\end{itemize}
+
+\subsection{Intended Audience and Reading Suggestions}
+This SRS is intended for the following audiences:
+
+\begin{itemize}
+    \item \textbf{Developers and Software Engineers}: Should focus on Section \ref{sec:system-features} (System Features) and Section \ref{sec:external-interfaces} (External Interface Requirements) for implementation details
+    \item \textbf{Project Managers}: Should review Section \ref{sec:overall-description} (Overall Description) and Section \ref{sec:other-requirements} (Other Requirements) for project scope and constraints
+    \item \textbf{Quality Assurance Testers}: Should concentrate on Section \ref{sec:system-features} for functional requirements and Section \ref{sec:nonfunctional} for non-functional requirements
+    \item \textbf{End Users}: Should review Section \ref{sec:overall-description} for system overview and user role descriptions
+    \item \textbf{Course Instructors}: Should examine all sections to evaluate project completeness and feasibility
+\end{itemize}
+
+The document is organized to provide a high-level overview first, followed by detailed technical specifications. Readers are recommended to start with Section \ref{sec:overall-description} (Overall Description) before proceeding to their area-specific sections.
+
+\subsection{Product Scope}
+Rikugan is a web-based application designed to revolutionize project management through gamification and role-based task assignment. The system addresses the need for better organization and resource allocation in software development projects by implementing a bounty-based reward system.
+
+\textbf{Key Benefits and Objectives:}
+\begin{itemize}
+    \item Improved task visibility and progress tracking through Kanban-style boards
+    \item Increased developer motivation through gamified bounty rewards
+    \item Clear role-based hierarchies with appropriate access controls
+    \item Streamlined project communication and collaboration
+    \item Efficient resource allocation and deadline management
+\end{itemize}
+
+The system supports three distinct user roles (Goons, Hashira, and Oyakatasama) with escalating privileges and responsibilities, creating a structured environment that promotes both individual accountability and team collaboration.
+
+\subsection{References}
+\begin{enumerate}
+    \item IEEE Std 830-1998, IEEE Recommended Practice for Software Requirements Specifications
+    \item React Documentation, \url{https://reactjs.org/docs/}
+    \item Vite Build Tool Documentation, \url{https://vitejs.dev/}
+    \item HeroUI Component Library, \url{https://heroui.com/}
+    \item MySQL Database Documentation, \url{https://dev.mysql.com/doc/}
+    \item Docker Documentation, \url{https://docs.docker.com/}
+    \item Kanban Methodology Guide, Agile Alliance, 2023
+\end{enumerate}
+
+\newpage
+\section{Overall Description}
+\label{sec:overall-description}
+
+\subsection{Product Perspective}
+Rikugan is a new, self-contained web-based application designed specifically for project management in software development environments. The system draws inspiration from popular task management tools like Trello and Jira but incorporates unique gamification elements through a bounty-based reward system.
+
+\subsubsection{System Context Diagram}
+The system architecture consists of the following components:
+
+\begin{itemize}
+    \item \textbf{Web Frontend} (React/Vite): User interface components
+    \item \textbf{Backend API} (Node.js): RESTful API services
+    \item \textbf{MySQL Database}: Data persistence layer
+    \item \textbf{Docker Runtime Environment}: Container orchestration
+\end{itemize}
+
+\subsection{Product Functions}
+Rikugan provides the following major functions:
+
+\subsubsection{Authentication \& Authorization}
+\begin{itemize}
+    \item Secure user registration and login
+    \item Role-based access control (Goons, Hashira, Oyakatasama)
+    \item Team-based license validation for task creation limits
+\end{itemize}
+
+\subsubsection{Task Management}
+\begin{itemize}
+    \item Create and manage task bounties with monetary rewards
+    \item Kanban-style task boards with status tracking
+    \item Task assignment and progression monitoring
+    \item Deadline management with penalty systems
+\end{itemize}
+
+\subsubsection{User Management}
+\begin{itemize}
+    \item Profile management with earnings tracking
+    \item Performance monitoring and reward history
+    \item Hierarchical user role administration
+\end{itemize}
+
+\subsubsection{Notification System}
+\begin{itemize}
+    \item Real-time notifications for task assignments
+    \item Deadline reminders and status updates
+    \item Achievement and reward notifications
+\end{itemize}
+
+\subsubsection{Reporting \& Analytics}
+\begin{itemize}
+    \item Task completion statistics
+    \item User performance metrics
+    \item Project progress visualization
+\end{itemize}
+
+\subsection{User Classes and Characteristics}
+
+\subsubsection{Goons (Junior Programmers)}
+\begin{itemize}
+    \item \textit{Frequency of Use:} Daily active users
+    \item \textit{Technical Expertise:} Basic to intermediate programming skills
+    \item \textit{Primary Functions:} Task selection, status updates, profile viewing
+    \item \textit{Characteristics:} Entry-level developers seeking skill improvement and monetary rewards
+    \item \textit{Security Level:} Basic user permissions
+\end{itemize}
+
+\subsubsection{Hashira (Senior Programmers)}
+\begin{itemize}
+    \item \textit{Frequency of Use:} Daily active users
+    \item \textit{Technical Expertise:} Advanced programming and project management skills
+    \item \textit{Primary Functions:} Task creation, team monitoring, all Goon functions
+    \item \textit{Characteristics:} Experienced developers with leadership responsibilities
+    \item \textit{Security Level:} Elevated permissions for task and team management
+\end{itemize}
+
+\subsubsection{Oyakatasama (Administrators)}
+\begin{itemize}
+    \item \textit{Frequency of Use:} Regular but less frequent than other roles
+    \item \textit{Technical Expertise:} System administration and project oversight
+    \item \textit{Primary Functions:} System administration, user account control, system configuration
+    \item \textit{Characteristics:} Project owners and system administrators
+    \item \textit{Security Level:} Full system administrative privileges
+\end{itemize}
+
+\subsection{Operating Environment}
+
+\subsubsection{Client-Side Requirements}
+\begin{itemize}
+    \item Modern web browsers (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
+    \item JavaScript enabled
+    \item Minimum screen resolution: 1024x768
+    \item Stable internet connection
+\end{itemize}
+
+\subsubsection{Server-Side Environment}
+\begin{itemize}
+    \item Node.js runtime environment (v16+ recommended)
+    \item MySQL database server (v8.0+)
+    \item Docker containerization platform
+    \item Linux/Unix-based hosting environment (Ubuntu 20.04 LTS recommended)
+    \item Minimum 4GB RAM, 20GB storage space
+\end{itemize}
+
+\subsubsection{Development Environment}
+\begin{itemize}
+    \item React 18+ with Vite build system
+    \item HeroUI component library
+    \item Modern JavaScript (ES2020+)
+\end{itemize}
+
+\subsection{Design and Implementation Constraints}
+
+\subsubsection{Technical Constraints}
+\begin{itemize}
+    \item Must be implemented as a web application using React and Vite
+    \item Database must use MySQL for data persistence
+    \item Must utilize Docker for development environment consistency
+    \item Frontend must use HeroUI component library for consistent styling
+\end{itemize}
+
+\subsubsection{Regulatory and Policy Constraints}
+\begin{itemize}
+    \item Must implement secure authentication and authorization
+    \item User data must be protected according to basic privacy standards
+\end{itemize}
+
+\subsubsection{Resource Constraints}
+\begin{itemize}
+    \item Development timeline: One month maximum
+    \item Team size: Undergraduate student project (5 developers)
+    \item Budget: Educational project with no commercial constraints
+    \item Hosting: Development environment only (no production deployment required)
+\end{itemize}
+
+\subsubsection{Interface Constraints}
+\begin{itemize}
+    \item Must be responsive for desktop and tablet devices
+    \item Must follow accessibility guidelines for basic usability
+\end{itemize}
+
+\subsection{User Documentation}
+The following documentation will be delivered with the system:
+
+\subsubsection{End-User Documentation}
+\begin{itemize}
+    \item Demo Video of Regular usage
+\end{itemize}
+
+\subsubsection{Technical Documentation}
+\begin{itemize}
+    \item API documentation for backend services
+    \item Database schema documentation
+    \item Installation and deployment guide
+    \item Developer setup instructions
+\end{itemize}
+
+\subsubsection{Administrative Documentation}
+\begin{itemize}
+    \item System administration guide
+    \item User account management procedures
+    \item Backup and recovery procedures
+\end{itemize}
+
+\subsection{Assumptions and Dependencies}
+
+\subsubsection{Assumptions}
+\begin{itemize}
+    \item Users have basic familiarity with web applications and project management concepts
+    \item Development team has access to modern development tools and environments
+    \item MySQL database will be available and properly configured
+    \item Docker environment can be successfully set up for development
+\end{itemize}
+
+\subsubsection{Dependencies}
+\begin{itemize}
+    \item React framework and associated npm packages
+    \item HeroUI component library availability and compatibility
+    \item MySQL database server functionality
+    \item Docker container runtime environment
+    \item Node.js runtime for backend development
+    \item Vite build tool for frontend compilation
+\end{itemize}
+
+\subsubsection{Risk Factors}
+\begin{itemize}
+    \item Potential learning curve for team members unfamiliar with React or MySQL
+    \item Docker environment setup complexity on different operating systems
+    \item Time constraints may limit advanced feature implementation
+    \item Third-party component library updates could affect compatibility
+\end{itemize}
+
+\newpage
+\section{External Interface Requirements}
+\label{sec:external-interfaces}
+
+\subsection{User Interfaces}
+Rikugan shall provide a responsive web-based user interface built with React and HeroUI components.
+
+\subsubsection{General UI Requirements}
+\begin{itemize}
+    \item Clean, modern design following Material Design principles
+    \item Responsive layout supporting desktop (1024px+) and tablet (768px+) viewports
+    \item Consistent navigation with role-based menu options
+    \item Loading states and error handling for all user actions
+    \item Accessibility compliance with WCAG 2.1 Level A standards
+\end{itemize}
+
+\subsubsection{Login/Authentication Interface}
+\begin{itemize}
+    \item Login form with username/email and password fields
+    \item "Remember me" checkbox for session persistence
+    \item Password reset functionality
+    \item Role-based redirection after successful login
+\end{itemize}
+
+\subsubsection{Dashboard Interface (Role-specific)}
+\begin{itemize}
+    \item \textbf{Goon Dashboard}: Task selection grid, personal statistics, current tasks
+    \item \textbf{Hashira Dashboard}: Task management panel, team overview
+    \item \textbf{Oyakatasama Dashboard}: System administration, user management
+\end{itemize}
+
+\subsubsection{Task Management Interface}
+\begin{itemize}
+    \item Kanban board with drag-and-drop functionality
+    \item Task cards displaying title, bounty amount, deadline, and status
+    \item Task detail modal with description, comments, and status updates
+    \item Task creation form (Hashira only) with all required fields
+\end{itemize}
+
+\subsubsection{Profile Interface}
+\begin{itemize}
+    \item User profile page with editable personal information
+    \item Earnings history and statistics
+    \item Achievement badges and milestones
+    \item Task completion history with filtering options
+\end{itemize}
+
+\subsection{Hardware Interfaces}
+As a web-based application, Rikugan has minimal direct hardware interface requirements:
+
+\subsubsection{Client-Side Hardware}
+\begin{itemize}
+    \item Standard web browser capable of running modern JavaScript (ES2020+)
+    \item Minimum 4GB RAM for optimal browser performance
+    \item Network interface for internet connectivity
+    \item Display resolution of at least 1024x768 pixels
+    \item Input devices: keyboard and mouse/touchpad (touch support for tablets)
+\end{itemize}
+
+\subsubsection{Server-Side Hardware}
+\begin{itemize}
+    \item x86\_64 processor architecture (Intel/AMD)
+    \item Minimum 4GB RAM for development environment
+    \item 20GB available storage space
+    \item Network interface for client connections
+    \item Compatible with standard virtualization platforms (Docker)
+\end{itemize}
+
+\subsubsection{No Special Hardware Requirements}
+\begin{itemize}
+    \item No specialized input devices required
+    \item No direct hardware control interfaces
+    \item No real-time hardware monitoring needs
+    \item Standard commodity hardware is sufficient
+\end{itemize}
+
+\subsection{Software Interfaces}
+
+\subsubsection{Frontend Framework Integration}
+\begin{itemize}
+    \item \textbf{React 18+}: Core frontend framework for component-based UI development
+    \item \textbf{Vite}: Build tool and development server for fast compilation and hot reload
+    \item \textbf{HeroUI}: Component library providing pre-built UI components and theming
+\end{itemize}
+
+\subsubsection{Backend Integration}
+\begin{itemize}
+    \item \textbf{Node.js Runtime}: JavaScript runtime environment for backend services
+    \item \textbf{Express.js}: Web application framework for RESTful API development
+    \item \textbf{JWT (JSON Web Tokens)}: Authentication and authorization token management
+\end{itemize}
+
+\subsubsection{Database Interface}
+\begin{itemize}
+    \item \textbf{MySQL 8.0+}: Primary database for persistent data storage
+    \item \textbf{Database Schema}: Tables for users, tasks, bounties, notifications, and licenses
+    \item \textbf{Connection Pooling}: Efficient database connection management
+    \item \textbf{Data Validation}: Server-side validation for all database operations
+\end{itemize}
+
+\subsubsection{Development Tools Integration}
+\begin{itemize}
+    \item \textbf{Docker}: Containerization for consistent development environment
+    \item \textbf{Docker Compose}: Multi-container application orchestration
+    \item \textbf{npm/yarn}: Package management for JavaScript dependencies
+    \item \textbf{ESLint}: Code quality and style enforcement
+\end{itemize}
+
+\subsubsection{API Specifications}
+\begin{itemize}
+    \item RESTful API design with JSON data format
+    \item Standard HTTP methods (GET, POST, PUT, DELETE)
+    \item API versioning through URL path (/api/v1/)
+    \item Consistent error response format with HTTP status codes
+\end{itemize}
+
+\subsubsection{External Libraries}
+\begin{itemize}
+    \item Password hashing: bcrypt for secure password storage
+    \item Date manipulation: date-fns or moment.js for deadline calculations
+    \item Validation: Joi or Yup for input validation schemas
+    \item Logging: Winston for structured application logging
+\end{itemize}
+
+\subsection{Communications Interfaces}
+
+\subsubsection{HTTP/HTTPS Protocol}
+\begin{itemize}
+    \item Primary communication via HTTP/HTTPS for web browser to server communication
+    \item HTTPS required for production deployment (TLS 1.2 minimum)
+    \item Standard HTTP methods with appropriate status codes
+    \item Content-Type: application/json for API responses
+\end{itemize}
+
+\subsubsection{RESTful API Communication}
+\begin{itemize}
+    \item Base URL structure: \texttt{https://domain.com/api/v1/}
+    \item Authentication via Bearer tokens in Authorization header
+    \item Request/Response format: JSON with UTF-8 encoding
+    \item Rate limiting: 1000 requests per hour per user
+\end{itemize}
+
+\subsubsection{API Endpoints Structure}
+\begin{lstlisting}
+GET    /api/v1/auth/login          - User authentication
+POST   /api/v1/auth/logout         - User logout
+GET    /api/v1/users/profile       - Get user profile
+PUT    /api/v1/users/profile       - Update user profile
+GET    /api/v1/tasks               - Get tasks list
+POST   /api/v1/tasks               - Create new task
+GET    /api/v1/tasks/{id}          - Get specific task
+PUT    /api/v1/tasks/{id}/status   - Update task status
+GET    /api/v1/notifications       - Get user notifications
+\end{lstlisting}
+
+\subsubsection{Real-time Communication (Future Enhancement)}
+\begin{itemize}
+    \item WebSocket support for real-time notifications
+    \item Server-Sent Events for live dashboard updates
+    \item Push notification capability for mobile browsers
+\end{itemize}
+
+\subsubsection{Security Protocols}
+\begin{itemize}
+    \item JWT tokens for stateless authentication
+    \item CORS (Cross-Origin Resource Sharing) configuration for frontend-backend communication
+    \item Input sanitization to prevent XSS and SQL injection
+    \item Request validation and error handling
+\end{itemize}
+
+\newpage
+\section{System Features}
+\label{sec:system-features}
+
+\subsection{User Authentication and Authorization}
+
+\subsubsection{Description and Priority}
+\textbf{Priority: High} - Essential for system security and role-based access control
+
+This feature provides secure user registration, login, and role-based access control for the three user types: Goons, Hashira, and Oyakatasama. The system implements team-based license validation to control task creation limits.
+
+\subsubsection{Stimulus/Response Sequences}
+\begin{enumerate}
+    \item User attempts to access the system → System redirects to login page if not authenticated
+    \item User enters credentials → System validates and grants role-appropriate access
+    \item Admin creates new user account → System generates credentials and assigns role
+    \item User attempts unauthorized action → System denies access and logs attempt
+\end{enumerate}
+
+\subsubsection{Functional Requirements}
+
+\paragraph{REQ-1: User Registration}
+The system shall allow administrators (Oyakatasama) to create new user accounts with the following information:
+\begin{itemize}
+    \item Username (unique, 3-50 characters)
+    \item Email address (valid format)
+    \item Initial password (minimum 8 characters)
+    \item Assigned role (Goon, Hashira, or Oyakatasama)
+\end{itemize}
+
+\paragraph{REQ-2: User Login}
+The system shall authenticate users using username/email and password combination and maintain session state for 8 hours of inactivity.
+
+\paragraph{REQ-3: Role-Based Access Control}
+The system shall enforce the following access levels:
+\begin{itemize}
+    \item \textbf{Goons}: Task selection, status updates, profile viewing
+    \item \textbf{Hashira}: All Goon functions plus task creation and team monitoring
+    \item \textbf{Oyakatasama}: All functions plus user management and system administration
+\end{itemize}
+
+\paragraph{REQ-4: License Management}
+The system shall implement a team-based license system where one hard-coded license key is configured per team deployment. Without a valid license, the entire project shall be inaccessible. The license is managed through environment configuration, not through the admin interface.
+
+\subsection{Task Management System}
+
+\subsubsection{Description and Priority}
+\textbf{Priority: High} - Core functionality for project management
+
+This feature implements the bounty-based task management system with Kanban-style boards, task assignment, and progress tracking.
+
+\subsubsection{Stimulus/Response Sequences}
+\begin{enumerate}
+    \item Hashira creates new task with bounty → System adds task to available tasks pool
+    \item Goon selects task → System assigns task and moves to "In Progress" status
+    \item User updates task status → System updates Kanban board and notifies stakeholders
+    \item Task reaches deadline → System applies penalties if incomplete
+\end{enumerate}
+
+\subsubsection{Functional Requirements}
+
+\paragraph{REQ-5: Task Creation}
+The system shall allow Hashira to create tasks with the following attributes:
+\begin{itemize}
+    \item Task name (required, max 100 characters)
+    \item Description (required, max 1000 characters)
+    \item Bounty amount (required, positive number)
+    \item Deadline (required, future date)
+    \item Priority level (High, Medium, Low)
+    \item Required skills/tags
+\end{itemize}
+
+\paragraph{REQ-6: Task Assignment}
+The system shall allow Goons to select and join available tasks, with automatic assignment to the first qualified user who selects the task.
+
+\paragraph{REQ-7: Kanban Board}
+The system shall display tasks in a Kanban board with the following columns:
+\begin{itemize}
+    \item Available
+    \item In Progress
+    \item Review
+    \item Completed
+\end{itemize}
+
+\paragraph{REQ-8: Task Status Updates}
+The system shall allow assigned users to update task status and add progress comments.
+
+\paragraph{REQ-9: Deadline Management}
+The system shall track task deadlines and apply monetary penalties for missed deadlines as defined by system configuration.
+
+\paragraph{REQ-10: Task Deletion}
+The system shall allow Hashira and Oyakatasama to delete tasks from the board. Tasks can only be deleted if they are in "Available" status or if no user is currently assigned to them.
+
+\subsection{User Profile and Reward System}
+
+\subsubsection{Description and Priority}
+\textbf{Priority: Medium} - Important for gamification and user engagement
+
+This feature manages user profiles, tracks earnings, and implements the reward/penalty system.
+
+\subsubsection{Stimulus/Response Sequences}
+\begin{enumerate}
+    \item User completes task → System awards bounty to user's account
+    \item User misses deadline → System applies penalty from user's account
+    \item User views profile → System displays current balance and task history
+    \item User achieves milestone → System displays achievement notification
+\end{enumerate}
+
+\subsubsection{Functional Requirements}
+
+\paragraph{REQ-11: User Profile Management}
+The system shall maintain user profiles containing:
+\begin{itemize}
+    \item Personal information (username, email, role)
+    \item Current monetary balance
+    \item Task completion history
+    \item Performance statistics
+\end{itemize}
+
+\paragraph{REQ-12: Bounty Reward System}
+The system shall automatically credit user accounts with bounty amounts upon successful task completion.
+
+\paragraph{REQ-13: Penalty System}
+The system shall apply configurable monetary penalties for missed deadlines or unsatisfactory task completion.
+
+\paragraph{REQ-14: Performance Tracking}
+The system shall track and display user performance metrics including:
+\begin{itemize}
+    \item Tasks completed
+    \item Average completion time
+    \item Success rate
+    \item Total earnings
+\end{itemize}
+
+\subsection{Notification System}
+
+\subsubsection{Description and Priority}
+\textbf{Priority: Medium} - Important for user engagement and communication
+
+This feature provides real-time notifications for task assignments, deadlines, and system events.
+
+\subsubsection{Stimulus/Response Sequences}
+\begin{enumerate}
+    \item Task assigned to user → System sends notification to user
+    \item Deadline approaching → System sends reminder notification
+    \item Task status changed → System notifies relevant stakeholders
+    \item User achieves milestone → System sends congratulatory notification
+\end{enumerate}
+
+\subsubsection{Functional Requirements}
+
+\paragraph{REQ-15: Task Notifications}
+The system shall notify users when:
+\begin{itemize}
+    \item New tasks are assigned to them
+    \item Task deadlines are approaching (24 hours before)
+    \item Task status is updated by team members
+    \item Tasks are completed or cancelled
+\end{itemize}
+
+\paragraph{REQ-16: Achievement Notifications}
+The system shall notify users of achievements such as:
+\begin{itemize}
+    \item First task completion
+    \item Earning milestones
+    \item Performance improvements
+    \item Role promotions
+\end{itemize}
+
+\newpage
+\section{Other Non-Functional Requirements}
+\label{sec:nonfunctional}
+
+\subsection{Performance Requirements}
+
+\subsubsection{Response Time Requirements}
+\begin{itemize}
+    \item Page loading: All pages must load within 3 seconds under normal network conditions
+    \item API response time: 95\% of API calls must respond within 500ms
+    \item Database queries: Complex queries must execute within 2 seconds
+    \item User authentication: Login process must complete within 1 second
+\end{itemize}
+
+\subsubsection{Throughput Requirements}
+\begin{itemize}
+    \item Concurrent users: System must support up to 50 concurrent users (suitable for undergraduate project scope)
+    \item Task operations: System must handle 100 task status updates per minute
+    \item Notification delivery: Real-time notifications must be delivered within 5 seconds
+\end{itemize}
+
+\subsubsection{Scalability Requirements}
+\begin{itemize}
+    \item User capacity: System designed to handle up to 200 registered users
+    \item Task capacity: Support for up to 1000 active tasks simultaneously
+\end{itemize}
+
+\subsubsection{Resource Usage}
+\begin{itemize}
+    \item Memory usage: Frontend application should use less than 100MB RAM per browser tab
+    \item Storage efficiency: Database size should not exceed 1GB for typical usage
+    \item CPU utilization: Server CPU usage should remain below 70\% under normal load
+\end{itemize}
+
+\subsection{Safety Requirements}
+
+\subsubsection{User Safety Measures}
+\begin{itemize}
+    \item Prevent unauthorized access to sensitive user information
+    \item Implement session timeout to protect unattended sessions
+    \item Provide clear confirmation dialogs for destructive actions (task deletion, account removal)
+    \item Sanitize all user inputs to prevent malicious code execution
+\end{itemize}
+
+\subsection{Security Requirements}
+
+\subsubsection{Authentication \& Authorization}
+\begin{itemize}
+    \item Implement secure password policies (minimum 8 characters, complexity requirements)
+    \item Use industry-standard password hashing (bcrypt with salt)
+    \item Implement JWT-based authentication with token expiration
+    \item Enforce role-based access control for all system functions
+    \item Provide secure logout functionality that invalidates tokens
+\end{itemize}
+
+\subsubsection{Data Security}
+\begin{itemize}
+    \item Encrypt sensitive data at rest (user credentials, personal information)
+    \item Use HTTPS for all client-server communications
+    \item Implement SQL injection prevention through parameterized queries
+    \item Sanitize all user inputs to prevent XSS attacks
+    \item Validate and escape output data before rendering
+\end{itemize}
+
+\subsubsection{System Security}
+\begin{itemize}
+    \item Regular security updates for all dependencies
+    \item Implement rate limiting to prevent brute force attacks
+    \item Monitor and log security-relevant events
+    \item Implement proper error handling that doesn't leak sensitive information
+\end{itemize}
+
+\subsection{Software Quality Attributes}
+
+\subsubsection{Usability}
+\begin{itemize}
+    \item Intuitive interface requiring minimal training for new users
+    \item Consistent navigation and interaction patterns across all pages
+    \item Clear error messages with actionable guidance
+    \item Responsive design supporting multiple screen sizes
+    \item Accessibility compliance with WCAG 2.1 Level A standards
+\end{itemize}
+
+\subsubsection{Reliability}
+\begin{itemize}
+    \item System uptime of 95\% during active development and testing phases
+    \item Graceful degradation when external services are unavailable
+    \item Automatic error recovery for transient failures
+    \item Data consistency maintained across all operations
+\end{itemize}
+
+\subsubsection{Maintainability}
+\begin{itemize}
+    \item Modular code structure following React best practices
+    \item Comprehensive API documentation
+    \item Clear separation of concerns between frontend and backend
+    \item Standardized coding conventions with ESLint enforcement
+    \item Unit test coverage of at least 70\% for critical functions
+\end{itemize}
+
+\subsubsection{Portability}
+\begin{itemize}
+    \item Cross-browser compatibility (Chrome, Firefox, Safari, Edge)
+    \item Operating system independence through web-based deployment
+    \item Docker containerization for consistent deployment environments
+    \item Database abstraction to support potential MySQL alternatives
+\end{itemize}
+
+\subsubsection{Scalability}
+\begin{itemize}
+    \item Modular architecture supporting incremental feature additions
+    \item Efficient database schema design for future growth
+    \item Component-based frontend architecture for easy extension
+    \item RESTful API design supporting future mobile applications
+\end{itemize}
+
+\subsubsection{Testability}
+\begin{itemize}
+    \item Unit testing capabilities for all major functions
+    \item API endpoints designed for automated testing
+    \item Test data generation and cleanup procedures
+    \item Clear separation between business logic and UI components
+\end{itemize}
+
+\subsection{Business Rules}
+
+\subsubsection{User Role Hierarchy}
+\begin{itemize}
+    \item Only Oyakatasama can create, modify, or delete user accounts
+    \item Only Hashira and Oyakatasama can create new task bounties
+    \item Only Goons and Hashira can select and work on tasks
+    \item Users can only update status of tasks assigned to them
+    \item Users cannot exceed their available balance when penalties are applied
+\end{itemize}
+
+\subsubsection{Task Management Rules}
+\begin{itemize}
+    \item Each task can only be assigned to one user at a time
+    \item Task bounties must be positive monetary values
+    \item Task deadlines must be future dates when created
+    \item Completed tasks cannot be modified or reassigned
+    \item Task status progression follows: Available → In Progress → Review → Completed
+\end{itemize}
+
+\subsubsection{Financial Rules}
+\begin{itemize}
+    \item Bounty payments are processed automatically upon task completion
+    \item Deadline penalties are applied automatically when deadlines are missed
+    \item Users cannot have negative account balances below -\$100
+    \item All financial transactions must be logged with timestamps
+    \item Only administrators can manually adjust user account balances
+\end{itemize}
+
+\subsubsection{License and Access Rules}
+\begin{itemize}
+    \item Each team deployment uses a single hard-coded license key
+    \item License validation occurs at system startup
+    \item Expired or invalid licenses prevent all access to the system
+    \item License keys are configured through environment variables by developers, not managed through the admin interface
+\end{itemize}
+
+\subsubsection{Notification Rules}
+\begin{itemize}
+    \item Task deadline reminders sent 24 hours before due date
+    \item Assignment notifications sent immediately upon task selection
+    \item Achievement notifications sent upon reaching milestones
+    \item Administrative notifications have higher priority than user notifications
+\end{itemize}
+
+\newpage
+\section{Other Requirements}
+\label{sec:other-requirements}
+
+\subsection{Database Requirements}
+
+\subsubsection{Database Management System}
+\begin{itemize}
+    \item MySQL 8.0 or higher for primary data storage
+    \item InnoDB storage engine for transaction support and data integrity
+    \item UTF-8 character encoding for international character support
+    \item Automated backup scheduling (daily for development environment)
+\end{itemize}
+
+\subsubsection{Database Schema Requirements}
+\begin{itemize}
+    \item User table: id, username, email, password\_hash, role, balance, created\_at, updated\_at
+    \item Tasks table: id, title, description, bounty\_amount, deadline, status, created\_by, assigned\_to, created\_at, updated\_at
+    \item Notifications table: id, user\_id, type, message, read\_status, created\_at
+    \item Licenses table: id, license\_key, expiry\_date, status, max\_users, created\_at (one record per team deployment)
+\end{itemize}
+
+\subsubsection{Data Integrity Requirements}
+\begin{itemize}
+    \item Foreign key constraints for data relationships
+    \item Unique constraints for usernames and email addresses
+    \item Check constraints for positive bounty amounts and future deadlines
+    \item Triggers for automatic timestamp updates
+\end{itemize}
+
+\subsubsection{Database Performance Requirements}
+\begin{itemize}
+    \item Index on frequently queried columns (user\_id, task\_status, created\_at)
+    \item Query execution time optimization for complex joins
+    \item Connection pooling for efficient resource utilization
+\end{itemize}
+
+\subsection{Development Environment Requirements}
+
+\subsubsection{Container Requirements}
+\begin{itemize}
+    \item Docker Engine 20.0+ for containerization
+    \item Docker Compose for multi-service orchestration
+    \item Separate containers for frontend, backend, and database services
+    \item Volume mounting for persistent data storage during development
+\end{itemize}
+
+\subsubsection{Development Tools}
+\begin{itemize}
+    \item Node.js 16+ runtime environment
+    \item npm or yarn package manager
+    \item Git version control with branching strategy
+    \item Code editor with ESLint and Prettier integration
+\end{itemize}
+
+\subsubsection{Build and Deployment}
+\begin{itemize}
+    \item Vite build system for frontend compilation
+    \item Hot module replacement for development efficiency
+    \item Environment-specific configuration files (.env)
+    \item Automated testing pipeline with npm scripts
+\end{itemize}
+
+\subsection{Legal and Compliance Requirements}
+
+\subsubsection{Educational Use}
+\begin{itemize}
+    \item System designed for educational purposes only
+    \item No commercial use or real monetary transactions
+    \item Compliance with university academic integrity policies
+    \item Open source libraries with compatible licenses
+\end{itemize}
+
+\subsubsection{Data Privacy}
+\begin{itemize}
+    \item No collection of sensitive personal information beyond username and email
+    \item Local development environment only (no cloud deployment for student project)
+    \item User consent for data collection through registration process
+    \item Right to data deletion upon account termination
+\end{itemize}
+
+\subsubsection{Intellectual Property}
+\begin{itemize}
+    \item Original code development by student team
+    \item Proper attribution of third-party libraries and components
+    \item MIT or similar permissive license for project code
+    \item No use of proprietary or copyrighted assets
+\end{itemize}
+
+\subsection{Documentation Requirements}
+
+\subsubsection{Technical Documentation}
+\begin{itemize}
+    \item API documentation with request/response examples
+    \item Database schema documentation with entity relationships
+    \item Setup and installation guide for development environment
+    \item Code documentation with JSDoc comments for complex functions
+\end{itemize}
+
+\subsubsection{User Documentation}
+\begin{itemize}
+    \item User manual with role-specific feature descriptions
+    \item Quick start guide for new users
+    \item FAQ section addressing common issues
+    \item Screenshot-based tutorials for key workflows
+\end{itemize}
+
+\subsubsection{Project Documentation}
+\begin{itemize}
+    \item Software Requirements Specification (this document)
+    \item Project timeline and milestone tracking
+    \item Team member responsibilities and contact information
+    \item Version control and branching strategy documentation
+\end{itemize}
+
+\subsection{Internationalization Requirements}
+
+\subsubsection{Language Support}
+\begin{itemize}
+    \item English as primary language for user interface
+    \item UTF-8 character encoding for future multi-language support
+    \item Externalized text strings for easy translation
+    \item Date and time formatting using locale-aware libraries
+\end{itemize}
+
+\subsubsection{Future Considerations}
+\begin{itemize}
+    \item Modular text resources for potential localization
+    \item Currency formatting flexibility for international use
+    \item Time zone handling for distributed teams
+\end{itemize}
+
+\subsection{Testing Requirements}
+
+\subsubsection{Unit Testing}
+\begin{itemize}
+    \item Jest framework for JavaScript unit tests
+    \item Test coverage of at least 70\% for critical business logic
+    \item Mock dependencies for isolated testing
+    \item Automated test execution in CI/CD pipeline
+\end{itemize}
+
+\subsubsection{Integration Testing}
+\begin{itemize}
+    \item API endpoint testing with appropriate test data
+    \item Database integration testing with test database
+    \item Component integration testing for React components
+    \item End-to-end testing for critical user workflows
+\end{itemize}
+
+\subsubsection{Test Data Management}
+\begin{itemize}
+    \item Seed data for consistent testing environments
+    \item Test user accounts for different role types
+    \item Sample tasks and bounties for testing scenarios
+    \item Database cleanup procedures between test runs
+\end{itemize}
+
+\end{document}

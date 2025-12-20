@@ -3,7 +3,7 @@ Introduction
 
 Purpose
 -------
-This Software Requirements Specification (SRS) document specifies the requirements for the Demon Slayer Corps Project Management System (DSCPMS), version 1.0. The system is designed as a bounty-based project management application that combines traditional Kanban board functionality with gamified task assignment and reward mechanisms. This SRS covers the complete web-based application including user authentication, task management, role-based access control, and reward tracking systems.
+This Software Requirements Specification (SRS) document specifies the requirements for Rikugan, version 1.0. The system is designed as a bounty-based project management application that combines traditional Kanban board functionality with gamified task assignment and reward mechanisms. This SRS covers the complete web-based application including user authentication, task management, role-based access control, and reward tracking systems.
 
 Document Conventions
 --------------------
@@ -29,7 +29,7 @@ The document is organized to provide a high-level overview first, followed by de
 
 Product Scope
 -------------
-The Demon Slayer Corps Project Management System is a web-based application designed to revolutionize project management through gamification and role-based task assignment. The system addresses the need for better organization and resource allocation in software development projects by implementing a bounty-based reward system.
+Rikugan is a web-based application designed to revolutionize project management through gamification and role-based task assignment. The system addresses the need for better organization and resource allocation in software development projects by implementing a bounty-based reward system.
 
 **Key Benefits and Objectives:**
 - Improved task visibility and progress tracking through Kanban-style boards

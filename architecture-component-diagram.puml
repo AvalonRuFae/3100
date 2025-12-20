@@ -1,6 +1,6 @@
-@startuml DSCPMS_Architecture_Component_Diagram
+@startuml Rikugan_Architecture_Component_Diagram
 !theme plain
-title Demon Slayer Corps Project Management System - Architecture Component Diagram
+title Rikugan - Architecture Component Diagram
 
 package "Presentation Layer" {
   [Web Browser] as Browser

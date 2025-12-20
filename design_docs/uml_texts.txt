@@ -1,21 +1,21 @@
 ```plantuml
-@startuml DSCPMS_Business_Context
+@startuml Rikugan_Business_Context
 !theme plain
-title DSCPMS Business Context
+title Rikugan Business Context
 
 actor "Goons\n(Junior Programmers)" as Goons
 actor "Hashira\n(Senior Programmers)" as Hashira
 actor "Oyakatasama\n(System Administrators)" as Admin
 actor "Course Instructors" as Instructors
 
-package "DSCPMS System" {
-  [Task & Bounty Management System] as DSCPMS
+package "Rikugan System" {
+  [Task & Bounty Management System] as Rikugan
 }
 
-Goons --> DSCPMS : Browse tasks\nAccept assignments\nTrack progress\nManage earnings
-Hashira --> DSCPMS : Create tasks\nSet bounties\nMonitor team\nAll Goon functions
-Admin --> DSCPMS : User management\nLicense distribution\nSystem configuration\nFull access
-Instructors --> DSCPMS : Evaluate system\nManage assignments\nAssess quality
+Goons --> Rikugan : Browse tasks\nAccept assignments\nTrack progress\nManage earnings
+Hashira --> Rikugan : Create tasks\nSet bounties\nMonitor team\nAll Goon functions
+Admin --> Rikugan : User management\nLicense distribution\nSystem configuration\nFull access
+Instructors --> Rikugan : Evaluate system\nManage assignments\nAssess quality
 
 @enduml
 ```
@@ -27,9 +27,9 @@ Instructors --> DSCPMS : Evaluate system\nManage assignments\nAssess quality
 
 
 ```plantuml
-@startuml DSCPMS_Technical_Context
+@startuml Rikugan_Technical_Context
 !theme plain
-title DSCPMS Technical Context
+title Rikugan Technical Context
 
 actor "Web Users" as Users
 package "Client Environment" {
@@ -66,9 +66,9 @@ Backend --> ExtLib : JWT, bcrypt, etc.
 
 
 ```plantuml
-@startuml DSCPMS_Component_Architecture
+@startuml Rikugan_Component_Architecture
 !theme plain
-title Demon Slayer Corps Project Management System - Component Architecture
+title Rikugan - Component Architecture
 
 package "Client Layer" {
   [Web Browser] as Browser
@@ -168,9 +168,9 @@ Frontend --> Vite : Build Process
 
 
 
-@startuml DSCPMS_Use_Cases
+@startuml Rikugan_Use_Cases
 !theme plain
-title Demon Slayer Corps Project Management System - Use Cases
+title Rikugan - Use Cases
 
 left to right direction
 
@@ -178,7 +178,7 @@ actor "Goon\n(Junior Programmer)" as Goon
 actor "Hashira\n(Senior Programmer)" as Hashira
 actor "Oyakatasama\n(Administrator)" as Admin
 
-rectangle "DSCPMS System" {
+rectangle "Rikugan System" {
   usecase "Login to System" as Login
   usecase "View Available Tasks" as ViewTasks
   usecase "Select Task" as SelectTask
@@ -254,9 +254,9 @@ ReviewTask ..> ManageBounty : affects
 
 
 
-@startuml DSCPMS_Class_Diagram
+@startuml Rikugan_Class_Diagram
 !theme plain
-title Demon Slayer Corps Project Management System - Class Diagram
+title Rikugan - Class Diagram
 
 class User {
   -id: number
@@ -429,7 +429,7 @@ F-->>U: Redirect to role-appropriate dashboard
 
 
 ```plantuml
-@startuml DSCPMS_Task_Assignment_Sequence
+@startuml Rikugan_Task_Assignment_Sequence
 !theme plain
 title Task Assignment and Completion Flow
 
@@ -489,7 +489,7 @@ F --> G: Task completed + bounty awarded
 ```
 
 
-@startuml DSCPMS_Notification_Flow
+@startuml Rikugan_Notification_Flow
 !theme plain
 title Real-time Notification System Flow
 
@@ -556,9 +556,9 @@ F --> U: Display deadline alerts
 
 
 
-@startuml DSCPMS_Deployment_Architecture
+@startuml Rikugan_Deployment_Architecture
 !theme plain
-title DSCPMS Deployment Architecture
+title Rikugan Deployment Architecture
 
 package "Development Environment" {
   [Local Dev Tools\n(Node.js, Git, VSCode)] as DevTools
@@ -615,9 +615,9 @@ end note
 
 
 ```plantuml
-@startuml DSCPMS_Deployment_Architecture
+@startuml Rikugan_Deployment_Architecture
 !theme plain
-title DSCPMS Deployment Architecture
+title Rikugan Deployment Architecture
 
 package "Development Environment" {
   [Local Dev Tools\n(Node.js, Git, VSCode)] as DevTools
@@ -672,9 +672,9 @@ end note
 
 
 ```plantuml
-@startuml DSCPMS_Domain_Model
+@startuml Rikugan_Domain_Model
 !theme plain
-title DSCPMS Domain Model
+title Rikugan Domain Model
 
 class User {
   -id: number
