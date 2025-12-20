@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const NotificationController = require('../controllers/NotificationController');
 const { authenticateToken } = require('../middleware/auth');
-const validateLicense = require('../middleware/validateLicense');
+const { validateLicense } = require('../middleware/validateLicense');
 
 // All routes require authentication and valid license
 router.use(authenticateToken);

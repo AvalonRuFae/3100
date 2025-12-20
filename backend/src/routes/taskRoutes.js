@@ -3,7 +3,7 @@ const router = express.Router();
 const TaskController = require('../controllers/TaskController');
 const { authenticateToken, authorize } = require('../middleware/auth');
 const { validate, taskValidation } = require('../middleware/validation');
-const validateLicense = require('../middleware/validateLicense');
+const { validateLicense } = require('../middleware/validateLicense');
 
 // All routes require authentication and valid license
 router.use(authenticateToken);

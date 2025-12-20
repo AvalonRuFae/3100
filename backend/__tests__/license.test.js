@@ -1,7 +1,7 @@
 const request = require('supertest');
 const app = require('../src/server');
 const { sequelize } = require('../src/database/connection');
-const { User, License, Team } = require('../src/models');
+const { User, License } = require('../src/models');
 const LicenseService = require('../src/services/LicenseService');
 const { validateLicenseKey } = require('../src/middleware/validateLicense');
 

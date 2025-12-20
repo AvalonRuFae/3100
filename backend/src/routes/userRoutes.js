@@ -3,7 +3,7 @@ const router = express.Router();
 const UserController = require('../controllers/UserController');
 const { authenticateToken, authorize } = require('../middleware/auth');
 const { validate, userValidation } = require('../middleware/validation');
-const validateLicense = require('../middleware/validateLicense');
+const { validateLicense } = require('../middleware/validateLicense');
 const { body } = require('express-validator');
 
 // All routes require authentication
