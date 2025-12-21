@@ -3,7 +3,7 @@ import { Route, Routes, Navigate } from "react-router-dom";
 import IndexPage from "@/pages/index";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
-import DashboardPage from "@/pages/dashboard";
+import DashboardPage from "@/pages/mainpage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/contexts/AuthContext";
 
