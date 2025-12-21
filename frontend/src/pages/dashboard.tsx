@@ -168,7 +168,7 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 	);
 
 	return (
-		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex w-full">
 			{/* Main Content */}
 			<div className="flex-1 lg:ml-0 transition-all duration-300">
 				{/* Header */}

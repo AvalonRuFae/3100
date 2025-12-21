@@ -114,39 +114,10 @@ const BountyCard: React.FC<BountyCardProps> = ({
         </div>
       </CardHeader>
 
-      <CardBody className="py-4">
-        <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3 mb-4">
-          {bounty.description}
-        </p>
-
-        {/* Tags */}
-        {bounty.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
-            {bounty.tags.map((tag, index) => (
-              <Chip
-                key={index}
-                size="sm"
-                variant="bordered"
-                className="text-xs"
-              >
-                {tag}
-              </Chip>
-            ))}
-          </div>
-        )}
-
-        {/* Additional Info */}
-        <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-          <span className={deadlineInfo.color}>
-            📅 {deadlineInfo.text}
-          </span>
-          {bounty.estimatedHours && (
-            <span>
-              ⏱️ ~{bounty.estimatedHours}h
-            </span>
-          )}
-        </div>
-      </CardBody>
+      {/* Remove CardBody details */}
+      {/* <CardBody className="py-4">
+        ...details...
+      </CardBody> */}
 
       <CardFooter className="pt-2">
         <div className="flex justify-between items-center w-full">
@@ -155,20 +126,8 @@ const BountyCard: React.FC<BountyCardProps> = ({
               ${bounty.bountyAmount.toFixed(2)}
             </span>
           </div>
-          
-          {!isUserTask && bounty.status === 'AVAILABLE' && (
-            <Button
-              color="primary"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTakeTask?.(bounty.id);
-              }}
-            >
-              Take Task
-            </Button>
-          )}
-          
+          {/* Remove Take Task button from card */}
+          {/* Only show View Details for user tasks */}
           {isUserTask && (
             <Button
               variant="bordered"
