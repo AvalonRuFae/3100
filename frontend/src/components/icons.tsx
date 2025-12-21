@@ -1,3 +1,23 @@
+// Task Management Icon
+export const TaskManagementIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+	<svg
+		viewBox="0 0 24 24"
+		fill="none"
+		xmlns="http://www.w3.org/2000/svg"
+		width="1em"
+		height="1em"
+		stroke="currentColor"
+		strokeWidth={1.5}
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		{...props}
+	>
+		<rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" fillOpacity="0.08" />
+		<path d="M8 9h8M8 13h5" stroke="currentColor" strokeWidth={1.5} />
+		<circle cx="7" cy="9" r="1" fill="currentColor" />
+		<circle cx="7" cy="13" r="1" fill="currentColor" />
+	</svg>
+);
 // Team Management Icon
 export const TeamManagementIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 	<svg

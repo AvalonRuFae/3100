@@ -10,6 +10,7 @@ import {
 	TaskIcon,
 	LicenseIcon,
 	TeamManagementIcon,
+	TaskManagementIcon,
 } from "@/components/icons";
 import License from "./liscense";
 
@@ -23,12 +24,24 @@ const DashboardPage: React.FC = () => {
 	const menuItems = [
 		{ id: "dashboard", label: "Dashboard", icon: DashboardIcon },
 		{ id: "taskboard", label: "Taskboard", icon: TaskIcon },
-		...((user?.role === "OYAKATASAMA" || user?.role === "HASHIRA")
-			? [{ id: "task_management", label: "Task Management", icon: TaskIcon }]
+		...(user?.role === "OYAKATASAMA" || user?.role === "HASHIRA"
+			? [
+					{
+						id: "task_management",
+						label: "Task Management",
+						icon: TaskManagementIcon,
+					},
+				]
 			: []),
 		{ id: "license", label: "License", icon: LicenseIcon },
 		...(user?.role === "OYAKATASAMA"
-			? [{ id: "team_management", label: "Team Management", icon: TeamManagementIcon }]
+			? [
+					{
+						id: "team_management",
+						label: "Team Management",
+						icon: TeamManagementIcon,
+					},
+				]
 			: []),
 	];
 
