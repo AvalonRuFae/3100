@@ -361,10 +361,10 @@ describe('Team API and Service', () => {
 
   describe('POST /api/v1/teams/:id/members - Add Member', () => {
     /**
-     * Test: Add member to team
-     * Purpose: Verify member addition functionality
+     * Test: Add member to team (Create new user)
+     * Purpose: Verify member creation and addition functionality
      */
-    test('should add member to team', async () => {
+    test('should create new user and add to team', async () => {
       // Create team
       const createResponse = await request(app)
         .post('/api/v1/teams/create')
@@ -376,60 +376,117 @@ describe('Team API and Service', () => {
 
       const teamId = createResponse.body.data.team.id;
 
-      // Add member
+      // Add new member
       const response = await request(app)
         .post(`/api/v1/teams/${teamId}/members`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ userId: goonUser.id });
+        .send({ 
+          username: 'newgoon',
+          email: 'newgoon@test.com',
+          password: 'NewGoon123!',
+          role: 'GOON'
+        });
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
+      expect(response.body.data.user).toBeDefined();
+      expect(response.body.data.user.username).toBe('newgoon');
+      expect(response.body.data.user.teamId).toBe(teamId.toString());
+      expect(response.body.data.credentials).toBeDefined();
+      expect(response.body.data.credentials.password).toBe('NewGoon123!');
 
-      // Verify user is added to team
-      const user = await User.findByPk(goonUser.id);
+      // Verify user is created and added to team
+      const user = await User.findOne({ where: { email: 'newgoon@test.com' } });
+      expect(user).toBeDefined();
       expect(user.teamId).toBe(teamId);
     });
 
     /**
-     * Test: Reject adding user already in a team
-     * Purpose: Ensure users can only be in one team
+     * Test: New user can login after being created
+     * Purpose: Verify that created user credentials work for login
      */
-    test('should reject adding user already in a team', async () => {
-      // Create first team
-      const team1Response = await request(app)
+    test('should allow new user to login with provided credentials', async () => {
+      // Create team
+      const createResponse = await request(app)
         .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          teamName: 'Team 1',
+          teamName: 'Login Test Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      // Create second team
-      const team2Response = await request(app)
-        .post('/api/v1/teams/create')
-        .set('Authorization', `Bearer ${hashiraToken}`)
-        .send({
-          teamName: 'Team 2',
-          licenseKey: 'RIKUGAN-2025-TEAM-B'
+      const teamId = createResponse.body.data.team.id;
+
+      // Add new member
+      const addMemberResponse = await request(app)
+        .post(`/api/v1/teams/${teamId}/members`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ 
+          username: 'logintest',
+          email: 'logintest@test.com',
+          password: 'LoginTest123!',
+          role: 'GOON'
         });
 
-      const team1Id = team1Response.body.data.team.id;
-      const team2Id = team2Response.body.data.team.id;
+      expect(addMemberResponse.status).toBe(201);
 
-      // Add goon to team 1
-      await request(app)
-        .post(`/api/v1/teams/${team1Id}/members`)
+      // Try to login with the new credentials
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: 'logintest',
+          password: 'LoginTest123!'
+        });
+
+      expect(loginResponse.status).toBe(200);
+      expect(loginResponse.body.success).toBe(true);
+      expect(loginResponse.body.data.token).toBeDefined();
+      expect(loginResponse.body.data.user.username).toBe('logintest');
+      expect(loginResponse.body.data.user.email).toBe('logintest@test.com');
+      expect(loginResponse.body.data.user.teamId).toBe(teamId);
+    });
+
+    /**
+     * Test: Reject duplicate email
+     * Purpose: Ensure email uniqueness
+     */
+    test('should reject duplicate email', async () => {
+      // Create team
+      const teamResponse = await request(app)
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ userId: goonUser.id });
+        .send({
+          teamName: 'Duplicate Test Team',
+          licenseKey: 'RIKUGAN-2025-TEAM-A'
+        });
 
-      // Try to add goon to team 2
+      const teamId = teamResponse.body.data.team.id;
+
+      // Add first member
+      await request(app)
+        .post(`/api/v1/teams/${teamId}/members`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ 
+          username: 'unique1',
+          email: 'duplicate@test.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
+
+      // Try to add another member with same email
       const response = await request(app)
-        .post(`/api/v1/teams/${team2Id}/members`)
-        .set('Authorization', `Bearer ${hashiraToken}`)
-        .send({ userId: goonUser.id });
+        .post(`/api/v1/teams/${teamId}/members`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ 
+          username: 'unique2',
+          email: 'duplicate@test.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('email already exists');
     });
   });
 
@@ -439,9 +496,6 @@ describe('Team API and Service', () => {
      * Purpose: Verify member removal functionality
      */
     test('should remove member from team', async () => {
-      // Refresh goonUser to get current teamId state
-      await User.update({ teamId: null }, { where: { id: goonUser.id } });
-      
       // Create team
       const createResponse = await request(app)
         .post('/api/v1/teams/create')
@@ -453,21 +507,27 @@ describe('Team API and Service', () => {
 
       const teamId = createResponse.body.data.team.id;
 
-      // Add member
+      // Add new member
       const addResponse = await request(app)
         .post(`/api/v1/teams/${teamId}/members`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ userId: goonUser.id });
+        .send({ 
+          username: 'removableuser',
+          email: 'removable@test.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
       
-      expect(addResponse.status).toBe(200);
+      expect(addResponse.status).toBe(201);
+      const newUserId = addResponse.body.data.user.id;
 
       // Verify member was added
-      const checkUser = await User.findByPk(goonUser.id);
+      const checkUser = await User.findByPk(newUserId);
       expect(checkUser.teamId).toBe(teamId);
 
       // Remove member
       const response = await request(app)
-        .delete(`/api/v1/teams/${teamId}/members/${goonUser.id}`)
+        .delete(`/api/v1/teams/${teamId}/members/${newUserId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       if (response.status !== 200) {
@@ -478,7 +538,7 @@ describe('Team API and Service', () => {
       expect(response.body.success).toBe(true);
 
       // Verify user is removed from team
-      const user = await User.findByPk(goonUser.id);
+      const user = await User.findByPk(newUserId);
       expect(user.teamId).toBeNull();
     });
   });
@@ -500,16 +560,26 @@ describe('Team API and Service', () => {
 
       const teamId = createResponse.body.data.team.id;
 
-      // Add members
+      // Add new members
       await request(app)
         .post(`/api/v1/teams/${teamId}/members`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ userId: goonUser.id });
+        .send({ 
+          username: 'listmember1',
+          email: 'listmember1@test.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
 
       await request(app)
         .post(`/api/v1/teams/${teamId}/members`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ userId: hashiraUser.id });
+        .send({ 
+          username: 'listmember2',
+          email: 'listmember2@test.com',
+          password: 'Test123!',
+          role: 'HASHIRA'
+        });
 
       // Get members
       const response = await request(app)
@@ -617,25 +687,22 @@ describe('Team API and Service', () => {
 
       // Add users up to capacity (10 users total)
       for (let i = 0; i < 10; i++) {
-        const user = await User.create({
+        await TeamService.addMember(team.id, {
           username: `capacityuser${i}`,
           email: `capacityuser${i}@test.com`,
           password: 'Test123!',
           role: 'GOON'
         });
-        await TeamService.addMember(team.id, user.id);
       }
 
       // Try to add one more user beyond capacity
-      const extraUser = await User.create({
-        username: 'extrauser',
-        email: 'extra@test.com',
-        password: 'Test123!',
-        role: 'GOON'
-      });
-
       await expect(
-        TeamService.addMember(team.id, extraUser.id)
+        TeamService.addMember(team.id, {
+          username: 'extrauser',
+          email: 'extra@test.com',
+          password: 'Test123!',
+          role: 'GOON'
+        })
       ).rejects.toThrow('maximum user capacity');
     });
   });

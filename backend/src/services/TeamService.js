@@ -204,26 +204,30 @@ class TeamService {
   }
 
   /**
-   * Add member to team
+   * Add member to team (Create new user account)
    * 
    * @param {number} teamId - Team ID
-   * @param {number} userId - User ID to add
-   * @returns {Object} Updated user
+   * @param {Object} userData - User data { username, email, password, role }
+   * @returns {Object} Created user and credentials
    */
-  async addMember(teamId, userId) {
+  async addMember(teamId, userData) {
     try {
       const team = await Team.findByPk(teamId);
       if (!team) {
         throw new Error('Team not found');
       }
 
-      const user = await User.findByPk(userId);
-      if (!user) {
-        throw new Error('User not found');
+      const { username, email, password, role } = userData;
+
+      // Check if user already exists
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        throw new Error('User with this email already exists');
       }
 
-      if (user.teamId) {
-        throw new Error('User is already a member of a team');
+      const existingUsername = await User.findOne({ where: { username } });
+      if (existingUsername) {
+        throw new Error('Username already exists');
       }
 
       // Check license capacity
@@ -236,12 +240,30 @@ class TeamService {
         }
       }
 
-      // Add user to team
-      await user.update({ teamId });
+      // Create new user with team assignment
+      const newUser = await User.create({
+        username,
+        email,
+        password, // Will be hashed by User model beforeCreate hook
+        role,
+        teamId,
+        balance: 0
+      });
       
-      logger.info(`User ${userId} added to team ${teamId}`);
+      logger.info(`New user ${newUser.id} (${username}) created and added to team ${teamId}`);
       
-      return user;
+      // Return user without password hash but with original password for admin reference
+      const userResponse = newUser.toJSON();
+      delete userResponse.password;
+
+      return {
+        user: userResponse,
+        credentials: {
+          username,
+          email,
+          password // Return plain password so admin can share with new user
+        }
+      };
     } catch (error) {
       logger.error('Add member error:', error);
       throw error;
