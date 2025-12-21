@@ -874,7 +874,6 @@ package "Docker Host" {
     [Frontend Container\n(React/Vite + nginx)] as FrontendContainer
     [Backend Container\n(Node.js/Express)] as BackendContainer
     [Database Container\n(MySQL 8.0+)] as DatabaseContainer
-    [Reverse Proxy\n(nginx)] as ReverseProxy
   }
 }
 
@@ -885,16 +884,14 @@ package "Client Environment" {
 ' Relationships
 DevTools --> FrontendContainer : Deploy & Debug
 DevTools --> BackendContainer : Deploy & Debug
-Browser --> ReverseProxy : HTTPS Requests
-ReverseProxy --> FrontendContainer : Static Files
-ReverseProxy --> BackendContainer : API Calls
+Browser --> FrontendContainer : HTTPS Requests\nStatic Files
+Browser --> BackendContainer : API Calls
 BackendContainer --> DatabaseContainer : Database Queries
 FrontendContainer --> BackendContainer : REST API
 
 ' Network connections
-Browser ..> FrontendContainer : Port 80/443
-ReverseProxy ..> FrontendContainer : Port 3000
-ReverseProxy ..> BackendContainer : Port 3001
+Browser ..> FrontendContainer : Port 3000
+Browser ..> BackendContainer : Port 5000
 BackendContainer ..> DatabaseContainer : Port 3306
 
 note right of DevTools
@@ -904,12 +901,11 @@ note right of DevTools
   - Volume mounting
 end note
 
-note right of ReverseProxy
-  Production features:
-  - Load balancing
-  - SSL termination
+note right of FrontendContainer
+  Features:
+  - Vite dev server
+  - React application
   - Static file serving
-  - API routing
 end note
 
 @enduml
