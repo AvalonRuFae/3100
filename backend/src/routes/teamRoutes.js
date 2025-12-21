@@ -11,6 +11,7 @@ router.get('/my-team', TeamController.getMyTeam);
 
 // Team CRUD operations
 router.post('/', TeamController.createTeam);
+router.post('/create', TeamController.createTeam); // PUML spec endpoint
 router.get('/', authorize('OYAKATASAMA'), TeamController.getAllTeams);
 router.get('/:id', TeamController.getTeamById);
 router.put('/:id', authorize('HASHIRA', 'OYAKATASAMA'), TeamController.updateTeam);

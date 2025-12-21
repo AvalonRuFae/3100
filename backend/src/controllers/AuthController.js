@@ -12,6 +12,15 @@ class AuthController {
         data: user
       });
     } catch (error) {
+      // Handle validation errors as 400
+      if (error.message.includes('already exists') ||
+          error.message.includes('Invalid') ||
+          error.message.includes('required')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      }
       next(error);
     }
   }
@@ -27,7 +36,9 @@ class AuthController {
         data: result
       });
     } catch (error) {
-      res.status(401).json({
+      // Use error status if provided (e.g., 403 for expired license)
+      const status = error.status || 401;
+      res.status(status).json({
         success: false,
         message: error.message
       });

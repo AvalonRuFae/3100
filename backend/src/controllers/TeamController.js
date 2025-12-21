@@ -10,12 +10,13 @@ class TeamController {
   /**
    * Create a new team
    * 
-   * POST /api/v1/teams
+   * POST /api/v1/teams/create (PUML spec) or POST /api/v1/teams (legacy)
    * 
    * Request:
    * - Body:
    *   {
-   *     name: string (required, 3-100 chars),
+   *     teamName: string (required, 3-100 chars),
+   *     name: string (legacy support),
    *     description: string (optional),
    *     licenseKey: string (required)
    *   }
@@ -25,19 +26,17 @@ class TeamController {
    *   success: true,
    *   message: string,
    *   data: {
-   *     id: number,
-   *     name: string,
-   *     description: string,
-   *     isActive: boolean,
-   *     createdBy: number
+   *     team: {...},
+   *     token: string (new JWT with team info)
    *   }
    * }
    */
   async createTeam(req, res, next) {
     try {
-      const { name, description, licenseKey } = req.body;
+      const { teamName, name, description, licenseKey } = req.body;
+      const finalTeamName = teamName || name; // Support both PUML (teamName) and legacy (name)
 
-      if (!name || !licenseKey) {
+      if (!finalTeamName || !licenseKey) {
         return res.status(400).json({
           success: false,
           message: 'Team name and license key are required'
@@ -45,16 +44,57 @@ class TeamController {
       }
 
       const team = await TeamService.createTeam(
-        { name, description, licenseKey },
+        { name: finalTeamName, description, licenseKey },
         req.user.id
       );
 
-      res.status(201).json({
+      // Get updated user with team and license info
+      const { User, Team, License } = require('../models');
+      const updatedUser = await User.findByPk(req.user.id, {
+        include: [
+          {
+            model: Team,
+            as: 'team',
+            include: [{
+              model: License,
+              as: 'license',
+              attributes: ['licenseKey', 'expirationDate']
+            }]
+          }
+        ]
+      });
+
+      // Generate new token with team information per PUML spec
+      const AuthService = require('../services/AuthService');
+      const token = AuthService.generateToken({
+        id: updatedUser.id,
+        username: updatedUser.username,
+        role: updatedUser.role,
+        teamId: updatedUser.teamId,
+        teamName: updatedUser.team?.name,
+        licenseKey: updatedUser.team?.license?.licenseKey,
+        licenseExpiry: updatedUser.team?.license?.expirationDate
+      });
+
+      res.status(200).json({
         success: true,
         message: 'Team created successfully',
-        data: team
+        data: {
+          team,
+          token
+        }
       });
     } catch (error) {
+      // Handle validation errors (invalid license, duplicate team name, etc.) as 400
+      if (error.message.includes('license') || 
+          error.message.includes('already exists') ||
+          error.message.includes('Invalid') ||
+          error.message.includes('expired')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      }
       next(error);
     }
   }

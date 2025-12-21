@@ -31,8 +31,15 @@ class UserService {
     }
   }
 
-  async getUserById(userId) {
+  async getUserById(userId, requestingUser = null) {
     try {
+      // Validate ID format
+      if (isNaN(userId)) {
+        const error = new Error('Invalid user ID format');
+        error.status = 400;
+        throw error;
+      }
+
       const user = await User.findByPk(userId, {
         include: [{
           model: License,
@@ -41,7 +48,19 @@ class UserService {
       });
 
       if (!user) {
-        throw new Error('User not found');
+        const error = new Error('User not found');
+        error.status = 404;
+        throw error;
+      }
+
+      // Team isolation check: users can only view profiles from their own team
+      // Admin (OYAKATASAMA) can view any user
+      if (requestingUser && 
+          requestingUser.role !== 'OYAKATASAMA' && 
+          user.teamId !== requestingUser.teamId) {
+        const error = new Error('Access denied: Cannot view users from other teams');
+        error.status = 403;
+        throw error;
       }
 
       return user;
@@ -127,7 +146,9 @@ class UserService {
       const user = await User.findByPk(userId);
 
       if (!user) {
-        throw new Error('User not found');
+        const error = new Error('User not found');
+        error.status = 404;
+        throw error;
       }
 
       // Don't allow direct password updates through this method
@@ -150,7 +171,9 @@ class UserService {
       const user = await User.findByPk(userId);
 
       if (!user) {
-        throw new Error('User not found');
+        const error = new Error('User not found');
+        error.status = 404;
+        throw error;
       }
 
       // Soft delete - just deactivate

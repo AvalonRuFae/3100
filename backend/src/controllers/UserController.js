@@ -16,7 +16,7 @@ class UserController {
 
   async getUserById(req, res, next) {
     try {
-      const user = await UserService.getUserById(req.params.id);
+      const user = await UserService.getUserById(req.params.id, req.user);
 
       res.json({
         success: true,
@@ -43,6 +43,14 @@ class UserController {
 
   async updateUser(req, res, next) {
     try {
+      // Only allow users to update their own profile (unless they're admin)
+      if (req.params.id != req.user.id && req.user.role !== 'OYAKATASAMA') {
+        return res.status(403).json({
+          success: false,
+          message: 'You can only update your own profile'
+        });
+      }
+
       const user = await UserService.updateUser(req.params.id, req.body);
 
       res.json({
@@ -57,6 +65,14 @@ class UserController {
 
   async deleteUser(req, res, next) {
     try {
+      // Prevent users from deleting themselves
+      if (req.params.id == req.user.id) {
+        return res.status(400).json({
+          success: false,
+          message: 'You cannot delete yourself'
+        });
+      }
+
       await UserService.deleteUser(req.params.id);
 
       res.json({

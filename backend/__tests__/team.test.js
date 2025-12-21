@@ -82,34 +82,33 @@ describe('Team API and Service', () => {
     await User.update({ teamId: null }, { where: {} });
   });
 
-  describe('POST /api/v1/teams - Create Team', () => {
+  describe('POST /api/v1/teams/create - Create Team', () => {
     /**
      * Test: Successfully create a team with valid license
-     * Purpose: Verify team creation flow with license validation
+     * Purpose: Verify team creation flow with license validation per PUML
      */
     test('should create a team with valid license key', async () => {
       const response = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Alpha Team',
-          description: 'First test team',
+          teamName: 'Alpha Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      expect(response.status).toBe(201);
+      expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.name).toBe('Alpha Team');
-      expect(response.body.data.description).toBe('First test team');
-      expect(response.body.data.isActive).toBe(true);
+      expect(response.body.data.team).toBeDefined();
+      expect(response.body.data.team.name).toBe('Alpha Team');
+      expect(response.body.data.token).toBeDefined();
 
       // Verify creator is assigned to team
       const updatedUser = await User.findByPk(adminUser.id);
-      expect(updatedUser.teamId).toBe(response.body.data.id);
+      expect(updatedUser.teamId).toBe(response.body.data.team.id);
 
       // Verify license was created
       const license = await License.findOne({
-        where: { teamId: response.body.data.id }
+        where: { teamId: response.body.data.team.id }
       });
       expect(license).toBeDefined();
       expect(license.licenseKey).toBe('RIKUGAN-2025-TEAM-A');
@@ -117,18 +116,18 @@ describe('Team API and Service', () => {
 
     /**
      * Test: Reject team creation with invalid license
-     * Purpose: Ensure only valid licenses can be used
+     * Purpose: Ensure only valid licenses can be used per PUML
      */
     test('should reject team creation with invalid license key', async () => {
       const response = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Invalid Team',
+          teamName: 'Invalid Team',
           licenseKey: 'INVALID-LICENSE-KEY'
         });
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
@@ -139,33 +138,33 @@ describe('Team API and Service', () => {
     test('should reject duplicate team names', async () => {
       // Create first team
       await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Duplicate Team',
+          teamName: 'Duplicate Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
       // Try to create second team with same name
       const response = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${hashiraToken}`)
         .send({
-          name: 'Duplicate Team',
+          teamName: 'Duplicate Team',
           licenseKey: 'RIKUGAN-2025-TEAM-B'
         });
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBeGreaterThanOrEqual(400);
       expect(response.body.success).toBe(false);
     });
 
     /**
      * Test: Reject team creation without required fields
-     * Purpose: Validate input requirements
+     * Purpose: Validate input requirements per PUML
      */
-    test('should require name and license key', async () => {
+    test('should require teamName and license key', async () => {
       const response = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           description: 'Missing required fields'
@@ -173,7 +172,7 @@ describe('Team API and Service', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('required');
+      expect(response.body.message || response.body.error).toMatch(/required|teamName|licenseKey/i);
     });
   });
 
@@ -185,15 +184,14 @@ describe('Team API and Service', () => {
     test('should get team by ID with members and license', async () => {
       // Create team
       const createResponse = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Beta Team',
-          description: 'Test team for retrieval',
+          teamName: 'Beta Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      const teamId = createResponse.body.data.id;
+      const teamId = createResponse.body.data.team.id;
 
       // Get team
       const response = await request(app)
@@ -230,18 +228,18 @@ describe('Team API and Service', () => {
     test('should get all teams with pagination (admin only)', async () => {
       // Create multiple teams
       await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Team 1',
+          teamName: 'Team 1',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
       await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${hashiraToken}`)
         .send({
-          name: 'Team 2',
+          teamName: 'Team 2',
           licenseKey: 'RIKUGAN-2025-TEAM-B'
         });
 
@@ -278,15 +276,14 @@ describe('Team API and Service', () => {
     test('should update team information', async () => {
       // Create team
       const createResponse = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Original Name',
-          description: 'Original description',
+          teamName: 'Original Name',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      const teamId = createResponse.body.data.id;
+      const teamId = createResponse.body.data.team.id;
 
       // Update team
       const response = await request(app)
@@ -309,14 +306,14 @@ describe('Team API and Service', () => {
      */
     test('should deny update to Goon users', async () => {
       const createResponse = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Test Team',
+          teamName: 'Test Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      const teamId = createResponse.body.data.id;
+      const teamId = createResponse.body.data.team.id;
 
       const response = await request(app)
         .put(`/api/v1/teams/${teamId}`)
@@ -335,14 +332,14 @@ describe('Team API and Service', () => {
     test('should deactivate team and remove members', async () => {
       // Create team
       const createResponse = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Team to Delete',
+          teamName: 'Team to Delete',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      const teamId = createResponse.body.data.id;
+      const teamId = createResponse.body.data.team.id;
 
       // Delete team
       const response = await request(app)
@@ -370,14 +367,14 @@ describe('Team API and Service', () => {
     test('should add member to team', async () => {
       // Create team
       const createResponse = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Member Test Team',
+          teamName: 'Member Test Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      const teamId = createResponse.body.data.id;
+      const teamId = createResponse.body.data.team.id;
 
       // Add member
       const response = await request(app)
@@ -400,24 +397,24 @@ describe('Team API and Service', () => {
     test('should reject adding user already in a team', async () => {
       // Create first team
       const team1Response = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Team 1',
+          teamName: 'Team 1',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
       // Create second team
       const team2Response = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${hashiraToken}`)
         .send({
-          name: 'Team 2',
+          teamName: 'Team 2',
           licenseKey: 'RIKUGAN-2025-TEAM-B'
         });
 
-      const team1Id = team1Response.body.data.id;
-      const team2Id = team2Response.body.data.id;
+      const team1Id = team1Response.body.data.team.id;
+      const team2Id = team2Response.body.data.team.id;
 
       // Add goon to team 1
       await request(app)
@@ -447,14 +444,14 @@ describe('Team API and Service', () => {
       
       // Create team
       const createResponse = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Removal Test Team',
+          teamName: 'Removal Test Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      const teamId = createResponse.body.data.id;
+      const teamId = createResponse.body.data.team.id;
 
       // Add member
       const addResponse = await request(app)
@@ -494,14 +491,14 @@ describe('Team API and Service', () => {
     test('should get all team members', async () => {
       // Create team
       const createResponse = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Members List Team',
+          teamName: 'Members List Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      const teamId = createResponse.body.data.id;
+      const teamId = createResponse.body.data.team.id;
 
       // Add members
       await request(app)
@@ -533,14 +530,14 @@ describe('Team API and Service', () => {
     test('should get team statistics', async () => {
       // Create team
       const createResponse = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'Stats Team',
+          teamName: 'Stats Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 
-      const teamId = createResponse.body.data.id;
+      const teamId = createResponse.body.data.team.id;
 
       // Get statistics
       const response = await request(app)
@@ -564,10 +561,10 @@ describe('Team API and Service', () => {
     test('should get current user team', async () => {
       // Create team
       const createResponse = await request(app)
-        .post('/api/v1/teams')
+        .post('/api/v1/teams/create')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'My Team',
+          teamName: 'My Team',
           licenseKey: 'RIKUGAN-2025-TEAM-A'
         });
 

@@ -1,7 +1,7 @@
 const request = require('supertest');
 const app = require('../src/server');
 const { sequelize } = require('../src/database/connection');
-const { User, Task, License } = require('../src/models');
+const { User, Task, License, Team } = require('../src/models');
 
 describe('Task API', () => {
   let goonToken, hashiraToken, adminToken;
@@ -56,10 +56,21 @@ describe('Task API', () => {
       .send({ username: 'admin', password: 'Test123!' });
     adminToken = adminLogin.body.data.token;
 
-    // Create a license and assign to users
+    // Create a Team with the admin as creator and assign the created users to that team
+    const team = await Team.create({ name: 'Test Team', description: 'Team for tests', createdBy: admin.body.data.id });
+
+    // Update created users so they belong to the team (validateLicense reads req.user.teamId)
+    const allUsers = await User.findAll();
+    for (const u of allUsers) {
+      await u.update({ teamId: team.id });
+    }
+
+    // Create a license and assign to users (include required teamId and expirationDate)
     const license = await License.create({
+      teamId: team.id,
       teamName: 'Test Team',
       licenseKey: 'TEST-2024-LICENSE',
+      expirationDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       isActive: true,
       maxUsers: 10
     });
@@ -75,6 +86,11 @@ describe('Task API', () => {
   });
 
   describe('POST /api/v1/tasks', () => {
+    /**
+     * Test: Create Task (Hashira)
+     * Purpose: Verify that users with role HASHIRA (and OYAKATASAMA) can create tasks
+     * and that required fields are validated.
+     */
     it('should allow Hashira to create task', async () => {
       const res = await request(app)
         .post('/api/v1/tasks')
@@ -93,7 +109,11 @@ describe('Task API', () => {
       expect(res.body.data.title).toBe('Test Task');
     });
 
-    it('should not allow Goon to create task', async () => {
+  /**
+   * Test: Create Task (Goon forbidden)
+   * Purpose: Confirm that users with role GOON are forbidden from creating tasks.
+   */
+  it('should not allow Goon to create task', async () => {
       const res = await request(app)
         .post('/api/v1/tasks')
         .set('Authorization', `Bearer ${goonToken}`)
@@ -108,7 +128,11 @@ describe('Task API', () => {
       expect(res.statusCode).toBe(403);
     });
 
-    it('should fail with missing required fields', async () => {
+  /**
+   * Test: Create Task (validation)
+   * Purpose: Ensure the API returns 400 when required task fields are missing or invalid.
+   */
+  it('should fail with missing required fields', async () => {
       const res = await request(app)
         .post('/api/v1/tasks')
         .set('Authorization', `Bearer ${hashiraToken}`)
@@ -121,6 +145,11 @@ describe('Task API', () => {
   });
 
   describe('GET /api/v1/tasks', () => {
+    /**
+     * Test: Get All Tasks
+     * Purpose: Verify that authenticated users can fetch the list of tasks and
+     * that the response is an array.
+     */
     it('should get all tasks', async () => {
       const res = await request(app)
         .get('/api/v1/tasks')
@@ -131,7 +160,11 @@ describe('Task API', () => {
       expect(Array.isArray(res.body.data)).toBe(true);
     });
 
-    it('should filter tasks by status', async () => {
+  /**
+   * Test: Filter Tasks by Status
+   * Purpose: Ensure the API supports filtering tasks by the `status` query parameter.
+   */
+  it('should filter tasks by status', async () => {
       const res = await request(app)
         .get('/api/v1/tasks?status=AVAILABLE')
         .set('Authorization', `Bearer ${goonToken}`);
@@ -142,6 +175,10 @@ describe('Task API', () => {
   });
 
   describe('GET /api/v1/tasks/board', () => {
+    /**
+     * Test: Get Kanban Board
+     * Purpose: Return tasks grouped by status to support the board/kanban view.
+     */
     it('should get kanban board', async () => {
       const res = await request(app)
         .get('/api/v1/tasks/board')
@@ -173,7 +210,11 @@ describe('Task API', () => {
       taskId = task.body.data.id;
     });
 
-    it('should allow Goon to assign task to themselves', async () => {
+  /**
+   * Test: Assign Task to Self
+   * Purpose: Confirm a GOON can claim/assign an available task to themselves.
+   */
+  it('should allow Goon to assign task to themselves', async () => {
       const res = await request(app)
         .post(`/api/v1/tasks/${taskId}/assign`)
         .set('Authorization', `Bearer ${goonToken}`);
@@ -182,7 +223,11 @@ describe('Task API', () => {
       expect(res.body.data.status).toBe('IN_PROGRESS');
     });
 
-    it('should not allow assigning already assigned task', async () => {
+  /**
+   * Test: Assign Already Assigned Task
+   * Purpose: Ensure assigning a task that is already assigned results in an error.
+   */
+  it('should not allow assigning already assigned task', async () => {
       const res = await request(app)
         .post(`/api/v1/tasks/${taskId}/assign`)
         .set('Authorization', `Bearer ${goonToken}`);
@@ -213,7 +258,11 @@ describe('Task API', () => {
         .set('Authorization', `Bearer ${goonToken}`);
     });
 
-    it('should allow assigned user to update status', async () => {
+  /**
+   * Test: Update Task Status by Assignee
+   * Purpose: Verify that the assigned user can update the task status (e.g., to REVIEW).
+   */
+  it('should allow assigned user to update status', async () => {
       const res = await request(app)
         .put(`/api/v1/tasks/${taskId}/status`)
         .set('Authorization', `Bearer ${goonToken}`)

@@ -1,4 +1,4 @@
-const { User, Transaction } = require('../models');
+const { User, Transaction, Task } = require('../models');
 const { sequelize } = require('../database/connection');
 const logger = require('../utils/logger');
 const NotificationService = require('./NotificationService');
@@ -162,7 +162,7 @@ class BountyService {
       const transactions = await Transaction.findAll({
         where: { userId },
         include: [{
-          model: require('./Task'),
+          model: Task,
           attributes: ['id', 'title']
         }],
         order: [['created_at', 'DESC']],

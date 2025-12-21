@@ -34,14 +34,26 @@ class AuthService {
 
   async login(username, password) {
     try {
-      // Find user by username or email
+      // Find user by username or email with team and license
+      const { Team } = require('../models');
       const user = await User.findOne({
         where: {
           [Op.or]: [
             { username: username },
             { email: username }
           ]
-        }
+        },
+        include: [
+          {
+            model: Team,
+            as: 'team',
+            include: [{
+              model: License,
+              as: 'license',
+              attributes: ['licenseKey', 'expirationDate', 'isActive']
+            }]
+          }
+        ]
       });
 
       if (!user) {
@@ -58,32 +70,73 @@ class AuthService {
         throw new Error('Invalid credentials');
       }
 
+      // Check if user has expired/inactive license
+      if (user.team && user.team.license) {
+        const license = user.team.license;
+        const isExpired = new Date(license.expirationDate) < new Date();
+        if (!license.isActive || isExpired) {
+          const error = new Error('License expired or invalid');
+          error.status = 403;
+          throw error;
+        }
+      }
+
       // Update last login
       user.lastLogin = new Date();
       await user.save();
 
-      // Generate JWT token
-      const token = this.generateToken(user);
+      // Build response with no_team flag and team data per PUML
+      const response = {
+        user,
+        token: this.generateToken({
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          teamId: user.teamId,
+          teamName: user.team?.name,
+          licenseKey: user.team?.license?.licenseKey,
+          licenseExpiry: user.team?.license?.expirationDate
+        })
+      };
+
+      // Add no_team flag if user has no team (PUML spec)
+      if (!user.teamId) {
+        response.no_team = true;
+      }
+
+      // Add team data if user has team (PUML spec)
+      if (user.team) {
+        response.team = {
+          id: user.team.id,
+          name: user.team.name,
+          license_key: user.team.license?.licenseKey,
+          license_expiry: user.team.license?.expirationDate
+        };
+      }
 
       logger.info(`User logged in: ${user.username}`);
 
-      return {
-        user,
-        token
-      };
+      return response;
     } catch (error) {
       logger.error('Login error:', error);
       throw error;
     }
   }
 
-  generateToken(user) {
+  generateToken(userOrPayload) {
+    // Support both user object and custom payload
+    const payload = userOrPayload.id ? {
+      id: userOrPayload.id,
+      username: userOrPayload.username,
+      role: userOrPayload.role,
+      teamId: userOrPayload.teamId,
+      teamName: userOrPayload.teamName,
+      licenseKey: userOrPayload.licenseKey,
+      licenseExpiry: userOrPayload.licenseExpiry
+    } : userOrPayload;
+
     return jwt.sign(
-      {
-        id: user.id,
-        username: user.username,
-        role: user.role
-      },
+      payload,
       process.env.JWT_SECRET,
       {
         expiresIn: process.env.JWT_EXPIRES_IN || '8h'
