@@ -1,5 +1,6 @@
 const { Task, User, License } = require('../models');
 const { Op } = require('sequelize');
+const { sequelize } = require('../database/connection');
 const logger = require('../utils/logger');
 const NotificationService = require('./NotificationService');
 const BountyService = require('./BountyService');
@@ -354,7 +355,7 @@ class TaskService {
       const completed = await Task.count({ where: { status: 'COMPLETED' } });
 
       const avgBounty = await Task.findAll({
-        attributes: [[require('sequelize').fn('AVG', require('sequelize').col('bountyAmount')), 'average']]
+        attributes: [[sequelize.fn('AVG', sequelize.col('bounty_amount')), 'average']]
       });
 
       const totalBounty = await Task.sum('bountyAmount', {

@@ -274,4 +274,299 @@ describe('Task API', () => {
       expect(res.body.data.status).toBe('REVIEW');
     });
   });
+
+  describe('GET /api/v1/tasks/:id', () => {
+    it('should get task by ID', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Get by ID Task',
+          description: 'Task to test getting by ID',
+          bountyAmount: 50.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'LOW'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      const res = await request(app)
+        .get(`/api/v1/tasks/${taskId}`)
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.id).toBe(taskId);
+      expect(res.body.data.title).toBe('Get by ID Task');
+    });
+
+    it('should return 500 for non-existent task', async () => {
+      const res = await request(app)
+        .get('/api/v1/tasks/99999')
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      expect(res.statusCode).toBe(500);
+    });
+  });
+
+  describe('PUT /api/v1/tasks/:id', () => {
+    it('should allow creator to update task', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Update Test Task',
+          description: 'Task to test updates',
+          bountyAmount: 75.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'MEDIUM'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      const res = await request(app)
+        .put(`/api/v1/tasks/${taskId}`)
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Updated Title',
+          bountyAmount: 100.00
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.title).toBe('Updated Title');
+      expect(parseFloat(res.body.data.bountyAmount)).toBe(100);
+    });
+
+    it('should not allow non-creator to update bounty amount', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Update Permission Test',
+          description: 'Task to test permission',
+          bountyAmount: 50.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'LOW'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      const res = await request(app)
+        .put(`/api/v1/tasks/${taskId}`)
+        .set('Authorization', `Bearer ${goonToken}`)
+        .send({
+          bountyAmount: 200.00
+        });
+
+      expect(res.statusCode).toBe(500);
+    });
+
+    it('should allow admin to update any task', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Admin Update Test',
+          description: 'Task for admin update test',
+          bountyAmount: 60.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'HIGH'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      const res = await request(app)
+        .put(`/api/v1/tasks/${taskId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          bountyAmount: 150.00,
+          deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(parseFloat(res.body.data.bountyAmount)).toBe(150);
+    });
+  });
+
+  describe('DELETE /api/v1/tasks/:id', () => {
+    it('should allow creator to delete available task', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Delete Test Task',
+          description: 'Task to be deleted',
+          bountyAmount: 40.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'LOW'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      const res = await request(app)
+        .delete(`/api/v1/tasks/${taskId}`)
+        .set('Authorization', `Bearer ${hashiraToken}`);
+
+      expect(res.statusCode).toBe(200);
+    });
+
+    it('should not allow deleting assigned task', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Assigned Delete Test',
+          description: 'Task that will be assigned',
+          bountyAmount: 80.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'MEDIUM'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      await request(app)
+        .post(`/api/v1/tasks/${taskId}/assign`)
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      const res = await request(app)
+        .delete(`/api/v1/tasks/${taskId}`)
+        .set('Authorization', `Bearer ${hashiraToken}`);
+
+      expect(res.statusCode).toBe(500);
+    });
+
+    it('should not allow non-creator goon to delete task', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Permission Delete Test',
+          description: 'Test permissions',
+          bountyAmount: 30.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'LOW'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      const res = await request(app)
+        .delete(`/api/v1/tasks/${taskId}`)
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      expect(res.statusCode).toBe(403);
+    });
+
+    it('should allow admin to delete any task', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Admin Delete Test',
+          description: 'Task for admin deletion',
+          bountyAmount: 35.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'LOW'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      const res = await request(app)
+        .delete(`/api/v1/tasks/${taskId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.statusCode).toBe(200);
+    });
+  });
+
+  describe('Task filters and search', () => {
+    it('should filter tasks by priority', async () => {
+      const res = await request(app)
+        .get('/api/v1/tasks?priority=HIGH')
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.every(task => task.priority === 'HIGH')).toBe(true);
+    });
+
+    it('should filter tasks by createdBy', async () => {
+      const res = await request(app)
+        .get(`/api/v1/tasks?createdBy=${hashiraId}`)
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.every(task => task.createdBy === hashiraId)).toBe(true);
+    });
+
+    it('should search tasks by title/description', async () => {
+      const res = await request(app)
+        .get('/api/v1/tasks?search=Test')
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+  });
+
+  describe('Task completion with bounty/penalty', () => {
+    it('should pay bounty when task completed on time', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Bounty Payment Task',
+          description: 'Complete on time for bounty',
+          bountyAmount: 200.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'HIGH'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      await request(app)
+        .post(`/api/v1/tasks/${taskId}/assign`)
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      const res = await request(app)
+        .put(`/api/v1/tasks/${taskId}/status`)
+        .set('Authorization', `Bearer ${goonToken}`)
+        .send({ status: 'COMPLETED' });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.status).toBe('COMPLETED');
+    });
+
+    it('should not allow non-assigned user to update task status', async () => {
+      const createRes = await request(app)
+        .post('/api/v1/tasks')
+        .set('Authorization', `Bearer ${hashiraToken}`)
+        .send({
+          title: 'Permission Status Test',
+          description: 'Test status permission',
+          bountyAmount: 50.00,
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'LOW'
+        });
+
+      const taskId = createRes.body.data.id;
+
+      const res = await request(app)
+        .put(`/api/v1/tasks/${taskId}/status`)
+        .set('Authorization', `Bearer ${goonToken}`)
+        .send({ status: 'COMPLETED' });
+
+      expect(res.statusCode).toBe(500);
+    });
+  });
+
+  describe('GET /api/v1/tasks/statistics', () => {
+    it('should get task statistics', async () => {
+      const res = await request(app)
+        .get('/api/v1/tasks/statistics')
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data).toHaveProperty('total');
+      expect(res.body.data).toHaveProperty('byStatus');
+      expect(res.body.data).toHaveProperty('averageBounty');
+    });
+  });
 });
