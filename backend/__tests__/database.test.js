@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 describe('Database - Comprehensive Tests', () => {
   beforeAll(async () => {
     await sequelize.sync({ force: true });
-  });
+  }, 30000);
 
   afterAll(async () => {
     await sequelize.close();

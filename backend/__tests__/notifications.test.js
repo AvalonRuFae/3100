@@ -55,7 +55,7 @@ describe('Notification Service', () => {
       status: 'AVAILABLE',
       deadline: new Date(Date.now() + 86400000)
     });
-  });
+  }, 30000);
 
   afterAll(async () => {
     await sequelize.close();

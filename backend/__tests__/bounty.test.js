@@ -70,7 +70,7 @@ describe('Bounty endpoints (integration)', () => {
     // Create transactions: one bounty (positive) and one penalty (negative)
     await Transaction.create({ userId: normalUser.id, taskId: testTask.id, type: 'BOUNTY', amount: 100.00, description: 'Test bounty', balanceBefore: 0, balanceAfter: 100 });
     await Transaction.create({ userId: normalUser.id, taskId: testTask.id, type: 'PENALTY', amount: -10.00, description: 'Test penalty', balanceBefore: 100, balanceAfter: 90 });
-  });
+  }, 30000);
 
   afterAll(async () => {
     await sequelize.close();

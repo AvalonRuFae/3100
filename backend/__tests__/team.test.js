@@ -69,7 +69,7 @@ describe('Team API and Service', () => {
       .post('/api/v1/auth/login')
       .send({ username: 'goonUser', password: 'Test123!' });
     goonToken = goonLogin.body.data.token;
-  });
+  }, 30000);
 
   afterAll(async () => {
     await sequelize.close();

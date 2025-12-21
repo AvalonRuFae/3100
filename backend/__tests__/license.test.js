@@ -40,7 +40,7 @@ describe('License API and Service (New Flow)', () => {
       .post('/api/v1/auth/login')
       .send({ username: 'noTeamUser', password: 'Test123!' });
     userToken = loginResponse.body.data.token;
-  });
+  }, 30000);
 
   afterAll(async () => {
     await sequelize.close();

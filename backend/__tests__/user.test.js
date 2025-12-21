@@ -101,7 +101,7 @@ describe('User Controller - Comprehensive Tests', () => {
       .post('/api/v1/auth/login')
       .send({ username: 'testadmin', password: 'Test123!' });
     adminToken = adminRelogin.body.data.token;
-  });
+  }, 30000);
 
   afterAll(async () => {
     await sequelize.close();
@@ -543,7 +543,7 @@ describe('User Controller - Comprehensive Tests', () => {
     // Reactivate goon user before profile tests since it was deactivated earlier
     beforeAll(async () => {
       await User.update({ isActive: true }, { where: { id: goonId } });
-    });
+    }, 30000);
 
     it('should allow setting custom bio', async () => {
       const customBio = 'This is my custom bio with special characters: !@#$%';

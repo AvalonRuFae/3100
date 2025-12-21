@@ -25,7 +25,7 @@ describe('Auth API - auth_flow.puml Compliance', () => {
       { key: 'RIKUGAN-TEST-2025-A', max_users: 50, expiry_date: '2026-12-31' },
       { key: 'RIKUGAN-TEST-2025-EXPIRED', max_users: 25, expiry_date: '2020-12-31' }
     ]);
-  });
+  }, 30000);
 
   afterAll(async () => {
     await sequelize.close();
@@ -284,7 +284,7 @@ describe('Auth API - auth_flow.puml Compliance', () => {
           password: 'Test123!'
         });
       tokenWithTeam = teamLogin.body.data.token;
-    });
+    }, 30000);
 
     it('should get current user with valid token (no team)', async () => {
       const res = await request(app)

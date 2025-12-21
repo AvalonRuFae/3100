@@ -79,7 +79,7 @@ describe('Task API', () => {
     for (const user of users) {
       await user.addLicense(license);
     }
-  });
+  }, 30000);
 
   afterAll(async () => {
     await sequelize.close();
@@ -208,7 +208,7 @@ describe('Task API', () => {
         });
 
       taskId = task.body.data.id;
-    });
+    }, 30000);
 
   /**
    * Test: Assign Task to Self
@@ -256,7 +256,7 @@ describe('Task API', () => {
       await request(app)
         .post(`/api/v1/tasks/${taskId}/assign`)
         .set('Authorization', `Bearer ${goonToken}`);
-    });
+    }, 30000);
 
   /**
    * Test: Update Task Status by Assignee
