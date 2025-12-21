@@ -20,6 +20,7 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [priorityFilter, setPriorityFilter] = useState("ALL");
 	const [tagFilter, setTagFilter] = useState("ALL");
+	const [statusFilter, setStatusFilter] = useState("ALL");
 	const [showCreateTask, setShowCreateTask] = useState(false);
 	const [createTaskForm, setCreateTaskForm] = useState({
 		title: "",
@@ -36,6 +37,15 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 	const [showConfirmComplete, setShowConfirmComplete] = useState(false);
 	const [showConfirmInProgress, setShowConfirmInProgress] = useState(false);
 	const [pendingStatusTask, setPendingStatusTask] = useState<{bounty: Bounty, status: string} | null>(null);
+	const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+	const [pendingDeleteTask, setPendingDeleteTask] = useState<Bounty | null>(null);
+	const [showAssignModal, setShowAssignModal] = useState(false);
+	const [assignSearch, setAssignSearch] = useState("");
+	const [assignResults, setAssignResults] = useState<any[]>([]);
+	const [assignSelectedUser, setAssignSelectedUser] = useState<any | null>(null);
+	const [showConfirmAssign, setShowConfirmAssign] = useState(false);
+	const [showConfirmReview, setShowConfirmReview] = useState(false);
+	const [showConfirmAvailable, setShowConfirmAvailable] = useState(false);
 
 	// Mock bounties data - replace with actual API call
 	useEffect(() => {
@@ -142,8 +152,12 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 			filtered = filtered.filter((bounty) => bounty.tags.includes(tagFilter));
 		}
 
+		if (statusFilter !== "ALL") {
+			filtered = filtered.filter((bounty) => bounty.status === statusFilter);
+		}
+
 		setFilteredBounties(filtered);
-	}, [searchTerm, priorityFilter, tagFilter, bounties, user]);
+	}, [searchTerm, priorityFilter, tagFilter, statusFilter, bounties, user]);
 
 	const handleCreateTaskInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
 		const { name, value } = e.target;
@@ -203,7 +217,8 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 		setNewTagInput("");
 	};
 
-	const handleManageTaskStatus = (bounty: Bounty, status: "IN_PROGRESS" | "COMPLETED") => {
+	// Update handleManageTaskStatus to support REVIEW and AVAILABLE
+	const handleManageTaskStatus = (bounty: Bounty, status: "IN_PROGRESS" | "COMPLETED" | "REVIEW" | "AVAILABLE") => {
 		if (status === "COMPLETED") {
 			setPendingStatusTask({ bounty, status: "COMPLETED" });
 			setShowConfirmComplete(true);
@@ -212,6 +227,16 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 		if (status === "IN_PROGRESS") {
 			setPendingStatusTask({ bounty, status: "IN_PROGRESS" });
 			setShowConfirmInProgress(true);
+			return;
+		}
+		if (status === "REVIEW") {
+			setPendingStatusTask({ bounty, status: "REVIEW" });
+			setShowConfirmReview(true);
+			return;
+		}
+		if (status === "AVAILABLE") {
+			setPendingStatusTask({ bounty, status: "AVAILABLE" });
+			setShowConfirmAvailable(true);
 			return;
 		}
 		// ...should never reach here...
@@ -251,6 +276,92 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 		}
 		setShowConfirmComplete(false);
 		setPendingStatusTask(null);
+	};
+
+	const confirmSetReview = () => {
+		if (pendingStatusTask && pendingStatusTask.status === "REVIEW") {
+			const bounty = pendingStatusTask.bounty;
+			setBounties((prev) =>
+				prev.map((b) =>
+					b.id === bounty.id ? { ...b, status: "REVIEW" } : b
+				)
+			);
+			setManageTaskSelected((b) =>
+				b && b.id === bounty.id ? { ...b, status: "REVIEW" } : b
+			);
+		}
+		setShowConfirmReview(false);
+		setPendingStatusTask(null);
+	};
+
+	const confirmSetAvailable = () => {
+		if (pendingStatusTask && pendingStatusTask.status === "AVAILABLE") {
+			const bounty = pendingStatusTask.bounty;
+			setBounties((prev) =>
+				prev.map((b) =>
+					b.id === bounty.id ? { ...b, status: "AVAILABLE", assignedTo: undefined } : b
+				)
+			);
+			setManageTaskSelected((b) =>
+				b && b.id === bounty.id ? { ...b, status: "AVAILABLE", assignedTo: undefined } : b
+			);
+		}
+		setShowConfirmAvailable(false);
+		setPendingStatusTask(null);
+	};
+
+	// Mock user search (replace with API call)
+	const mockUsers = [
+		{ id: 2, username: "tanjiro", email: "tanjiro@rikugan.com" },
+		{ id: 3, username: "zenitsu", email: "zenitsu@rikugan.com" },
+		{ id: 4, username: "inosuke", email: "inosuke@rikugan.com" },
+		{ id: 5, username: "shinobu", email: "shinobu@rikugan.com" },
+		{ id: 6, username: "rengoku", email: "rengoku@rikugan.com" },
+	];
+
+	const handleAssignSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const value = e.target.value;
+		setAssignSearch(value);
+		if (value.trim().length === 0) {
+			setAssignResults([]);
+			return;
+		}
+		const lower = value.toLowerCase();
+		setAssignResults(
+			mockUsers.filter(
+				(u) =>
+					u.username.toLowerCase().includes(lower) ||
+					u.email.toLowerCase().includes(lower)
+			)
+		);
+	};
+
+	const handleAssignUser = () => {
+		if (manageTaskSelected && assignSelectedUser) {
+			setShowConfirmAssign(true);
+		}
+	};
+
+	const confirmAssignUser = () => {
+		if (manageTaskSelected && assignSelectedUser) {
+			setBounties((prev) =>
+				prev.map((b) =>
+					b.id === manageTaskSelected.id
+						? { ...b, assignedTo: assignSelectedUser.username, status: "IN_PROGRESS" }
+						: b
+				)
+			);
+			setManageTaskSelected((b) =>
+				b && b.id === manageTaskSelected.id
+					? { ...b, assignedTo: assignSelectedUser.username, status: "IN_PROGRESS" }
+					: b
+			);
+		}
+		setShowAssignModal(false);
+		setShowConfirmAssign(false);
+		setAssignSearch("");
+		setAssignResults([]);
+		setAssignSelectedUser(null);
 	};
 
 	return (
@@ -314,6 +425,20 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 								{allTags.map((tag) => (
 									<SelectItem key={tag}>{tag}</SelectItem>
 								))}
+							</Select>
+							<Select
+								placeholder="Filter by Status"
+								selectedKeys={statusFilter === "ALL" ? [] : [statusFilter]}
+								onSelectionChange={(keys) =>
+									setStatusFilter((Array.from(keys)[0] as string) || "ALL")
+								}
+								className="w-full lg:w-48"
+							>
+								<SelectItem key="ALL">All Statuses</SelectItem>
+								<SelectItem key="AVAILABLE">Available</SelectItem>
+								<SelectItem key="IN_PROGRESS">In Progress</SelectItem>
+								<SelectItem key="REVIEW">Review</SelectItem>
+								<SelectItem key="COMPLETED">Completed</SelectItem>
 							</Select>
 						</div>
 					</div>
@@ -499,24 +624,70 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 											))}
 										</div>
 									</div>
+									{/* Set Status Row */}
+									<div className="mt-4">
+										<h4 className="font-semibold mb-2">Set Status</h4>
+										<div className="flex gap-2">
+											{manageTaskSelected.status === "AVAILABLE" ? (
+												<Button
+													size="sm"
+													variant="solid"
+													onPress={() => setShowAssignModal(true)}
+												>
+													Set In Progress
+												</Button>
+											) : manageTaskSelected.status === "IN_PROGRESS" ? (
+												<>
+													<Button
+														size="sm"
+														variant="bordered"
+														onPress={() => handleManageTaskStatus(manageTaskSelected, "REVIEW")}
+													>
+														Set Review
+													</Button>
+													<Button
+														size="sm"
+														variant="bordered"
+														onPress={() => handleManageTaskStatus(manageTaskSelected, "AVAILABLE")}
+													>
+														Set Available
+													</Button>
+												</>
+											) : (
+												<>
+													<Button
+														size="sm"
+														variant={manageTaskSelected.status === "IN_PROGRESS" ? "solid" : "bordered"}
+														onPress={() => handleManageTaskStatus(manageTaskSelected, "IN_PROGRESS")}
+														disabled={manageTaskSelected.status === "IN_PROGRESS"}
+													>
+														In Progress
+													</Button>
+													<Button
+														size="sm"
+														variant={manageTaskSelected.status === "COMPLETED" ? "solid" : "bordered"}
+														onPress={() => handleManageTaskStatus(manageTaskSelected, "COMPLETED")}
+														disabled={manageTaskSelected.status === "COMPLETED"}
+													>
+														Completed
+													</Button>
+												</>
+											)}
+										</div>
+									</div>
 								</div>
 							</ModalBody>
 							<ModalFooter>
 								<Button
 									size="sm"
-									variant={manageTaskSelected.status === "IN_PROGRESS" ? "solid" : "bordered"}
-									onPress={() => handleManageTaskStatus(manageTaskSelected, "IN_PROGRESS")}
-									disabled={manageTaskSelected.status === "IN_PROGRESS"}
+									color="danger"
+									variant="bordered"
+									onPress={() => {
+										setPendingDeleteTask(manageTaskSelected);
+										setShowConfirmDelete(true);
+									}}
 								>
-									Set In Progress
-								</Button>
-								<Button
-									size="sm"
-									variant={manageTaskSelected.status === "COMPLETED" ? "solid" : "bordered"}
-									onPress={() => handleManageTaskStatus(manageTaskSelected, "COMPLETED")}
-									disabled={manageTaskSelected.status === "COMPLETED"}
-								>
-									Set Completed
+									Delete
 								</Button>
 								<Button
 									size="sm"
@@ -528,6 +699,68 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 							</ModalFooter>
 						</>
 					)}
+				</ModalContent>
+			</Modal>
+
+			{/* Assign User Modal */}
+			<Modal isOpen={showAssignModal} onClose={() => { setShowAssignModal(false); setAssignSearch(""); setAssignResults([]); setAssignSelectedUser(null); }}>
+				<ModalContent>
+					<ModalHeader>Assign User to Task</ModalHeader>
+					<ModalBody>
+						<Input
+							placeholder="Search by username or email"
+							value={assignSearch}
+							onChange={handleAssignSearch}
+						/>
+						<div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+							{assignResults.length === 0 && assignSearch && (
+								<div className="text-gray-500 text-sm">No users found.</div>
+							)}
+							{assignResults.map((user) => (
+								<div
+									key={user.id}
+									className={`p-2 rounded cursor-pointer flex items-center gap-2 ${assignSelectedUser?.id === user.id ? "bg-primary-100 dark:bg-primary-900" : "hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+									onClick={() => setAssignSelectedUser(user)}
+								>
+									<span className="font-semibold">{user.username}</span>
+									<span className="text-xs text-gray-500">{user.email}</span>
+									{assignSelectedUser?.id === user.id && (
+										<span className="ml-auto text-primary font-bold">Selected</span>
+									)}
+								</div>
+							))}
+						</div>
+					</ModalBody>
+					<ModalFooter>
+						<Button variant="light" onPress={() => { setShowAssignModal(false); setAssignSearch(""); setAssignResults([]); setAssignSelectedUser(null); }}>
+							Cancel
+						</Button>
+						<Button
+							color="primary"
+							disabled={!assignSelectedUser}
+							onPress={handleAssignUser}
+						>
+							Assign & Set In Progress
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
+
+			{/* Confirm Assign Modal */}
+			<Modal isOpen={showConfirmAssign} onClose={() => setShowConfirmAssign(false)}>
+				<ModalContent>
+					<ModalHeader>Confirm Assignment</ModalHeader>
+					<ModalBody>
+						Are you sure you want to assign this task to <b>{assignSelectedUser?.username}</b>?
+					</ModalBody>
+					<ModalFooter>
+						<Button variant="light" onPress={() => setShowConfirmAssign(false)}>
+							Cancel
+						</Button>
+						<Button color="primary" onPress={confirmAssignUser}>
+							Confirm
+						</Button>
+					</ModalFooter>
 				</ModalContent>
 			</Modal>
 
@@ -576,7 +809,85 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 					</ModalFooter>
 				</ModalContent>
 			</Modal>
-			{/* ...existing code for Create Task Sidebar ... */}
+
+			{/* Confirm Review Status Modal */}
+			<Modal isOpen={showConfirmReview} onClose={() => { setShowConfirmReview(false); setPendingStatusTask(null); }}>
+				<ModalContent>
+					<ModalHeader>Confirm Status Change</ModalHeader>
+					<ModalBody>
+						Are you sure you want to set this task to <b>Review</b>?
+						{pendingStatusTask && (
+							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+								<strong>{pendingStatusTask.bounty.title}</strong>
+							</div>
+						)}
+					</ModalBody>
+					<ModalFooter>
+						<Button variant="light" onPress={() => { setShowConfirmReview(false); setPendingStatusTask(null); }}>
+							Cancel
+						</Button>
+						<Button color="primary" onPress={confirmSetReview}>
+							Confirm
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
+
+			{/* Confirm Available Status Modal */}
+			<Modal isOpen={showConfirmAvailable} onClose={() => { setShowConfirmAvailable(false); setPendingStatusTask(null); }}>
+				<ModalContent>
+					<ModalHeader>Confirm Status Change</ModalHeader>
+					<ModalBody>
+						Are you sure you want to set this task to <b>Available</b>? This will unassign the user.
+						{pendingStatusTask && (
+							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+								<strong>{pendingStatusTask.bounty.title}</strong>
+							</div>
+						)}
+					</ModalBody>
+					<ModalFooter>
+						<Button variant="light" onPress={() => { setShowConfirmAvailable(false); setPendingStatusTask(null); }}>
+							Cancel
+						</Button>
+						<Button color="primary" onPress={confirmSetAvailable}>
+							Confirm
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
+
+			{/* Confirm Delete Modal */}
+			<Modal isOpen={showConfirmDelete} onClose={() => { setShowConfirmDelete(false); setPendingDeleteTask(null); }}>
+				<ModalContent>
+					<ModalHeader>Confirm Delete</ModalHeader>
+					<ModalBody>
+						Are you sure you want to delete this task?
+						{pendingDeleteTask && (
+							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+								<strong>{pendingDeleteTask.title}</strong>
+							</div>
+						)}
+					</ModalBody>
+					<ModalFooter>
+						<Button variant="light" onPress={() => { setShowConfirmDelete(false); setPendingDeleteTask(null); }}>
+							Cancel
+						</Button>
+						<Button
+							color="danger"
+							onPress={() => {
+								if (pendingDeleteTask) {
+									setBounties((prev) => prev.filter((b) => b.id !== pendingDeleteTask.id));
+									setManageTaskSelected(null);
+								}
+								setShowConfirmDelete(false);
+								setPendingDeleteTask(null);
+							}}
+						>
+							Delete
+						</Button>
+					</ModalFooter>
+				</ModalContent>
+			</Modal>
 		</div>
 	);
 };
