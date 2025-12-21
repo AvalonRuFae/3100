@@ -9,12 +9,10 @@ import Notification from "./notification";
 import {
 	DashboardIcon,
 	TaskIcon,
-	LicenseIcon,
 	TeamManagementIcon,
 	TaskManagementIcon,
 	NotificationIcon,
 } from "@/components/icons";
-import License from "./liscense";
 
 const DashboardPage: React.FC = () => {
 	const { user } = useAuth();
@@ -26,7 +24,6 @@ const DashboardPage: React.FC = () => {
 	const menuItems = [
 		{ id: "dashboard", label: "Dashboard", icon: DashboardIcon },
 		{ id: "taskboard", label: "Taskboard", icon: TaskIcon },
-		{ id: "notification", label: "Notification", icon: NotificationIcon },
 		...(user?.role === "OYAKATASAMA" || user?.role === "HASHIRA"
 			? [
 					{
@@ -36,7 +33,7 @@ const DashboardPage: React.FC = () => {
 					},
 				]
 			: []),
-		{ id: "license", label: "License", icon: LicenseIcon },
+		{ id: "notification", label: "Notification", icon: NotificationIcon },
 		...(user?.role === "OYAKATASAMA"
 			? [
 					{
@@ -51,11 +48,10 @@ const DashboardPage: React.FC = () => {
 	const componentMap: Record<string, React.ReactNode> = {
 		dashboard: <Dashboard user={user} />,
 		taskboard: <Taskboard user={user} />,
-		notification: <Notification user={user} />,
 		...((user?.role === "OYAKATASAMA" || user?.role === "HASHIRA") && {
 			task_management: <TaskManagement user={user} />,
 		}),
-		license: <License user={user} />,
+		notification: <Notification user={user} />,
 		...(user?.role === "OYAKATASAMA" && {
 			team_management: <TeamManagement user={user} />,
 		}),
