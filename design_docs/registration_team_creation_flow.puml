@@ -1,0 +1,66 @@
+@startuml User Registration and Team Creation Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+
+actor User
+participant "Frontend" as FE
+participant "API" as API
+participant "License Service" as LS
+database "Database" as DB
+
+== User Registration ==
+
+User -> FE: Submit registration form
+FE -> API: POST /api/v1/auth/register\n{username, email, password, role}
+API -> DB: Check username/email uniqueness
+DB --> API: Unique
+API -> API: bcrypt.hash(password)
+API -> DB: INSERT INTO users (team_id=NULL)
+DB --> API: User created
+API --> FE: 201 Created
+FE -> User: Redirect to Login
+
+== Login (No Team) ==
+
+User -> FE: Enter credentials
+FE -> API: POST /api/v1/auth/login
+API -> DB: SELECT user (team_id=NULL)
+DB --> API: User data
+API -> API: Verify password
+API --> FE: 200 OK {token, no_team: true}
+FE -> User: Redirect to Team Creation Panel
+
+== Team Creation ==
+
+User -> FE: Enter team name + license key
+FE -> API: POST /api/v1/teams/create\n{teamName, licenseKey}
+API -> LS: validateLicense(licenseKey)
+LS -> LS: Load from environment config
+
+alt License Valid & Available
+    LS --> API: Valid {max_users, expiry_date}
+    API -> DB: BEGIN TRANSACTION
+    API -> DB: INSERT INTO teams
+    API -> DB: INSERT INTO licenses
+    API -> DB: UPDATE users SET team_id=?
+    API -> DB: COMMIT
+    DB --> API: Success
+    API --> FE: 200 OK {team, new_token}
+    FE -> User: Redirect to Dashboard
+else License Invalid/Expired/InUse
+    LS --> API: Error
+    API --> FE: 400 Bad Request
+    FE -> User: Show error message
+end
+
+note over User, DB
+**Key Points:**
+- Self-registration with role selection
+- New users created with team_id=NULL
+- Licenses configured in environment
+- Team creation uses transaction
+- Additional members assigned by admin
+end note
+
+@enduml

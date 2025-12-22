@@ -1,0 +1,228 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{tocloft}
+
+% Page style
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Rikugan SRS}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Rikugan - Software Requirements Specification},
+    pdfpagemode=FullScreen,
+}
+
+% Code listings setup
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red}
+}
+
+\title{
+    \vspace{2cm}
+    \Huge \textbf{Software Requirements Specification}\\
+    \vspace{0.5cm}
+    \LARGE for\\
+    \vspace{0.5cm}
+    \Huge \textbf{Rikugan}\\
+    \vspace{0.3cm}
+    \Large A Bounty-Based Project Management System\\
+    \vspace{2cm}
+}
+
+\author{
+    Version 1.0\\
+    \vspace{0.5cm}
+    Prepared by CSCI3100 Development Team\\
+    \vspace{0.3cm}
+    \today
+}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+\newpage
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+\subsection{Purpose}
+This SRS document specifies requirements for Rikugan v1.0, a bounty-based project management web application combining Kanban functionality with gamified task assignment and rewards. It covers user authentication, task management, role-based access control, and reward tracking.
+
+\subsection{Document Conventions}
+\textbf{Bold text} indicates system components; \textit{italic text} represents actions/responses; \texttt{monospace} denotes technical elements. Requirements use REQ-XX format. Priority levels: High (essential), Medium (important), Low (nice-to-have).
+
+\subsection{Product Scope}
+Rikugan is a web-based project management system using gamification and role-based task assignment. It provides task visibility through Kanban boards, developer motivation via bounty rewards, and structured role hierarchies (Goons, Hashira, Oyakatasama) for accountability and collaboration.
+
+\subsection{References}
+IEEE Std 830-1998; React, Vite, HeroUI, MySQL, and Docker documentation available at respective official websites.
+
+\newpage
+\section{Overall Description}
+\label{sec:overall-description}
+
+\subsection{Product Perspective}
+Rikugan is a self-contained web application for project management with gamification via a bounty-based reward system. Architecture: React/Vite frontend, Node.js backend, MySQL database, Docker containerization.
+
+\subsection{Product Functions}
+\begin{itemize}
+    \item \textbf{Authentication}: Secure login, role-based access control, team license validation
+    \item \textbf{Task Management}: Bounty creation, Kanban boards, status tracking, deadline penalties
+    \item \textbf{User Management}: Profiles, earnings tracking, performance monitoring
+    \item \textbf{Notifications}: Task assignments, deadline reminders, achievements
+    \item \textbf{Analytics}: Task statistics, performance metrics, progress visualization
+\end{itemize}
+
+\subsection{User Classes and Characteristics}
+\begin{itemize}
+    \item \textbf{Goons}: Entry-level programmers; task selection, status updates, profile viewing; basic permissions
+    \item \textbf{Hashira}: Senior programmers; all Goon functions plus task creation and team monitoring; elevated permissions
+    \item \textbf{Oyakatasama}: Administrators; full system access including user management and configuration; admin privileges
+\end{itemize}
+
+\subsection{Operating Environment}
+\textbf{Client}: Modern browsers (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+), JavaScript enabled, 1024x768 min resolution.  
+\textbf{Server}: Node.js v16+, MySQL 8.0+, Docker, Ubuntu 20.04 LTS, 4GB RAM, 20GB storage.  
+\textbf{Development}: React 18+, Vite, HeroUI, ES2020+.
+
+\subsection{Design and Implementation Constraints}
+\textbf{Technical}: React/Vite web app, MySQL database, Docker containers, HeroUI components.  
+\textbf{Policy}: Secure authentication, basic privacy protection.  
+\textbf{Resources}: One-month timeline, 5-person student team, educational project, development environment only.  
+\textbf{Interface}: Responsive design for desktop/tablet, basic accessibility compliance.
+
+\subsection{Assumptions and Dependencies}
+\textbf{Assumptions}: Users familiar with web apps, team has development tools, MySQL/Docker properly configured.  
+\textbf{Dependencies}: React, HeroUI, MySQL, Docker, Node.js, Vite.  
+\textbf{Risks}: Learning curve, Docker setup complexity, time constraints, library compatibility.
+
+\newpage
+\section{System Features}
+\label{sec:system-features}
+
+\subsection{User Authentication and Authorization}
+\textbf{Priority: High} - Essential for security and role-based access control.
+
+\paragraph{REQ-1: User Registration} Oyakatasama can create accounts with username (3-50 chars), email, password (8+ chars), and role.
+
+\paragraph{REQ-2: User Login} Authenticate via username/email and password; 8-hour session timeout.
+
+\paragraph{REQ-3: Role-Based Access}  
+\textbf{Goons}: Task selection, status updates, profile viewing.  
+\textbf{Hashira}: All Goon functions plus task creation and team monitoring.  
+\textbf{Oyakatasama}: All functions plus user/system administration.
+
+\paragraph{REQ-4: License Management} Hard-coded team license key via environment config; invalid license blocks all access.
+
+\subsection{Task Management System}
+\textbf{Priority: High} - Core project management functionality.
+
+\paragraph{REQ-5: Task Creation} Hashira create tasks with name (max 100 chars), description (max 1000 chars), bounty amount (positive), deadline (future date), priority, and skill tags.
+
+\paragraph{REQ-6: Task Assignment} Goons select available tasks; automatic assignment to first qualified user.
+
+\paragraph{REQ-7: Kanban Board} Display tasks in columns: Available, In Progress, Review, Completed.
+
+\paragraph{REQ-8: Task Status Updates} Assigned users update status and add progress comments.
+
+\paragraph{REQ-9: Deadline Management} Track deadlines; apply monetary penalties for missed deadlines.
+
+\paragraph{REQ-10: Task Deletion} Hashira/Oyakatasama delete tasks only when Available or unassigned.
+
+\subsection{User Profile and Reward System}
+\textbf{Priority: Medium} - Gamification and engagement.
+
+\paragraph{REQ-11: User Profile} Maintain username, email, role, balance, task history, and performance statistics.
+
+\paragraph{REQ-12: Bounty Rewards} Auto-credit user accounts upon task completion.
+
+\paragraph{REQ-13: Penalty System} Apply configurable penalties for missed deadlines.
+
+\paragraph{REQ-14: Performance Tracking} Display tasks completed, avg completion time, success rate, total earnings.
+
+\subsection{Notification System}
+\textbf{Priority: Medium} - User engagement and communication.
+
+\paragraph{REQ-15: Task Notifications} Notify on: task assignment, 24hr deadline reminders, status updates, completion/cancellation.
+
+\paragraph{REQ-16: Achievement Notifications} Notify on: first task completion, earning milestones, performance improvements, role promotions.
+
+\newpage
+\section{Other Non-Functional Requirements}
+\label{sec:nonfunctional}
+
+\subsection{Performance Requirements}
+\begin{itemize}
+    \item Page load: <3s; API response: 95\% <500ms; Database queries: <2s; Login: <1s
+    \item Support 50 concurrent users, 100 task updates/min, notifications within 5s
+    \item Capacity: 200 users, 1000 active tasks
+    \item Frontend <100MB RAM/tab, DB <1GB, server CPU <70\%
+\end{itemize}
+
+\subsection{Security Requirements}
+\begin{itemize}
+    \item \textbf{Authentication}: 8+ char passwords, bcrypt hashing, JWT tokens, role-based access, secure logout
+    \item \textbf{Data Security}: HTTPS, encrypted credentials, parameterized queries, input sanitization, XSS prevention
+    \item \textbf{System}: Rate limiting, security logging, no sensitive info in errors
+\end{itemize}
+
+\subsection{Software Quality Attributes}
+\begin{itemize}
+    \item \textbf{Usability}: Intuitive interface, consistent navigation, clear errors, responsive design, WCAG 2.1 Level A
+    \item \textbf{Reliability}: 95\% uptime, graceful degradation, automatic error recovery, data consistency
+    \item \textbf{Maintainability}: Modular React code, API docs, separation of concerns, ESLint standards, 70\% test coverage
+    \item \textbf{Portability}: Cross-browser (Chrome/Firefox/Safari/Edge), Docker containers
+    \item \textbf{Testability}: Unit testing, automated API testing, test data procedures
+\end{itemize}
+
+\subsection{Business Rules}
+\begin{itemize}
+    \item \textbf{User Roles}: Only Oyakatasama manage accounts; Hashira/Oyakatasama create tasks; Goons/Hashira work on tasks; users update only assigned tasks
+    \item \textbf{Tasks}: One user per task, positive bounties, future deadlines, completed tasks immutable, status flow: Available → In Progress → Review → Completed
+    \item \textbf{Financial}: Auto bounty payment on completion, auto penalties on missed deadlines, -\$100 balance minimum, all transactions logged, admin-only manual adjustments
+    \item \textbf{License}: One hard-coded key per team via environment config; invalid license blocks all access
+    \item \textbf{Notifications}: 24hr deadline reminders, immediate assignment alerts, milestone achievements, admin priority
+\end{itemize}
+
+\newpage
+\section{Other Requirements}
+\label{sec:other-requirements}
+
+\subsection{Database Requirements}
+MySQL 8.0+, InnoDB, UTF-8, daily backups. Core tables: users (id, username, email, password\_hash, role, balance, timestamps), tasks (id, title, description, bounty\_amount, deadline, status, created\_by, assigned\_to, timestamps), notifications (id, user\_id, type, message, read\_status, created\_at), licenses (id, license\_key, expiry\_date, status, max\_users, created\_at). Indexes on user\_id, task\_status, created\_at.
+
+\subsection{Development Environment}
+Docker 20.0+ with compose, Node.js 16+, npm/yarn, Git, Vite build, hot reload, environment config (.env), automated testing.
+
+\subsection{Legal and Compliance}
+Educational use only, no commercial transactions, university policy compliance, open source libraries, MIT license. Privacy: minimal data collection (username/email), local environment only, user consent, data deletion on account termination.
+
+\subsection{Testing Requirements}
+Jest for unit tests, 70\% coverage for critical logic, API endpoint testing, React component integration testing, E2E for critical workflows. Test database with seed data, cleanup procedures.
+
+\end{document}

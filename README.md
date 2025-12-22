@@ -1,4 +1,4 @@
-Software Requirements Specification for *PROJECT NAME*
+Software Requirements Specification for Rikugan
 ======================================================
 
 Version *NUMBER* *STATUS*

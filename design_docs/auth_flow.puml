@@ -1,0 +1,69 @@
+@startuml User Authentication Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+
+actor User
+participant "Frontend" as FE
+participant "API" as API
+participant "Auth Service" as Auth
+database "Database" as DB
+
+== Login ==
+
+User -> FE: Enter credentials
+FE -> API: POST /api/v1/auth/login
+API -> DB: SELECT user, team, license
+DB --> API: User data
+API -> Auth: bcrypt.compare(password, hash)
+
+alt User Has No Team
+    Auth --> API: Generate JWT (teamless_flag=true)
+    API --> FE: 200 OK {token, no_team}
+    FE -> User: Redirect to Team Creation Panel
+else User Has Team + Valid License
+    Auth --> API: Generate JWT (user, role, team_id)
+    API --> FE: 200 OK {token, user, team}
+    FE -> User: Redirect to Dashboard
+else License Expired/Invalid
+    API --> FE: 403 Forbidden
+    FE -> User: Show error
+end
+
+== Protected Route Access ==
+
+User -> FE: Navigate to protected page
+FE -> API: GET /resource\nAuthorization: Bearer <token>
+API -> Auth: Verify JWT
+
+alt Token Valid + Role Authorized
+    Auth --> API: Authorized
+    API -> DB: Fetch resource (team-filtered)
+    DB --> API: Resource data
+    API --> FE: 200 OK
+    FE -> User: Display resource
+else Invalid/Expired Token
+    Auth --> API: Unauthorized
+    API --> FE: 401 Unauthorized
+    FE -> User: Redirect to Login
+else Role Not Authorized
+    Auth --> API: Forbidden
+    API --> FE: 403 Forbidden
+    FE -> User: Show "Access Denied"
+end
+
+== Logout ==
+
+User -> FE: Click logout
+FE -> FE: Clear localStorage
+FE -> User: Redirect to Login
+
+note over User, DB
+**Key Points:**
+- JWT expires in 8 hours
+- Team check on every login
+- License validation required
+- All queries filtered by team_id
+end note
+
+@enduml

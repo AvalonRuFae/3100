@@ -1,0 +1,76 @@
+@startuml Notification System Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+
+participant "Event" as Event
+participant "NotificationService" as NS
+participant "Background Job" as Job
+database "Database" as DB
+participant "Frontend" as FE
+actor "User" as User
+
+== Notification Generation ==
+
+Event -> NS: triggerNotification(type, recipients, data)
+NS -> DB: INSERT INTO notifications
+DB --> NS: Created
+note right: Types: TASK_CREATED, TASK_ASSIGNED,\nTASK_COMPLETED, BOUNTY_RECEIVED, etc.
+
+== Background Jobs ==
+
+loop Hourly
+    Job -> DB: SELECT tasks with deadline < 24hrs
+    DB --> Job: Tasks list
+    Job -> DB: INSERT deadline notifications
+end
+
+loop Daily
+    Job -> DB: SELECT overdue tasks
+    DB --> Job: Tasks list
+    Job -> DB: INSERT overdue notifications
+end
+
+== Notification Polling ==
+
+loop Every 30 seconds
+    FE -> DB: GET /api/v1/notifications/unread
+    DB --> FE: Unread count
+    FE -> User: Update badge
+end
+
+== User Interaction ==
+
+User -> FE: Click notifications
+FE -> DB: GET /api/v1/notifications
+DB --> FE: Notification list (team-filtered)
+FE -> User: Display notifications
+
+User -> FE: Mark as read
+FE -> DB: PUT /api/v1/notifications/:id/read
+DB --> FE: Updated
+FE -> User: Update UI
+
+note over Event, User
+**Notification Types:**
+- TASK_CREATED: New task available
+- TASK_ASSIGNED: Task assigned to user  
+- TASK_STATUS_UPDATED: Status changed
+- TASK_COMPLETED: Task completed
+- DEADLINE_APPROACHING: Deadline within 24 hours
+- TASK_OVERDUE: Task past deadline
+- USER_JOINED_TEAM: New team member
+
+**Notification Filtering:**
+- All notifications include team_id
+- Users only see notifications from their team
+- Query: WHERE user_id = ? AND team_id = ?
+- Team isolation enforced at query level
+
+**Delivery Method:**
+- 30-second frontend polling (no WebSocket)
+- Lightweight unread count checks
+- Full notification list on demand
+end note
+
+@enduml

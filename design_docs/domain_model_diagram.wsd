@@ -1,0 +1,183 @@
+@startuml Domain Model - DSCPMS
+!define ENTITY class
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageStyle rectangle
+
+title Domain Model - Rikugan (DSCPMS)
+
+' Entities
+ENTITY Team {
+  + id: Integer <<PK>>
+  --
+  name: String(100) <<unique>>
+  description: Text
+  isActive: Boolean
+  createdBy: Integer <<FK>>
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+ENTITY User {
+  + id: Integer <<PK>>
+  --
+  username: String(50) <<unique>>
+  email: String(100) <<unique>>
+  password: String(255)
+  role: Enum
+  teamId: Integer <<FK>>
+  balance: Decimal(10,2)
+  profilePicture: String(255)
+  bio: Text
+  isActive: Boolean
+  lastLogin: DateTime
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+ENTITY License {
+  + id: Integer <<PK>>
+  --
+  teamId: Integer <<FK>> <<unique>>
+  teamName: String(100)
+  licenseKey: String(255) <<unique>>
+  isActive: Boolean
+  expirationDate: DateTime
+  maxUsers: Integer
+  notes: Text
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+ENTITY Task {
+  + id: Integer <<PK>>
+  --
+  title: String(100)
+  description: Text
+  status: Enum
+  priority: Enum
+  bountyAmount: Decimal(10,2)
+  deadline: DateTime
+  tags: JSON
+  createdBy: Integer <<FK>>
+  assignedTo: Integer <<FK>>
+  completedAt: DateTime
+  assignedAt: DateTime
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+ENTITY Notification {
+  + id: Integer <<PK>>
+  --
+  userId: Integer <<FK>>
+  type: Enum
+  title: String(255)
+  message: Text
+  readStatus: Boolean
+  relatedTaskId: Integer <<FK>>
+  createdAt: DateTime
+}
+
+ENTITY Transaction {
+  + id: Integer <<PK>>
+  --
+  userId: Integer <<FK>>
+  taskId: Integer <<FK>>
+  type: Enum
+  amount: Decimal(10,2)
+  description: Text
+  balanceBefore: Decimal(10,2)
+  balanceAfter: Decimal(10,2)
+  createdAt: DateTime
+}
+
+' Relationships
+
+' Team relationships
+Team "1" -- "0..*" User : has members >
+Team "1" -- "0..1" License : validated by >
+User "1" -- "0..*" Team : creates >
+
+' User relationships  
+User "1" -- "0..*" Task : creates >
+User "1" -- "0..*" Task : assigned to >
+User "1" -- "0..*" Notification : receives >
+User "1" -- "0..*" Transaction : has >
+
+' Task relationships
+Task "1" -- "0..*" Notification : triggers >
+Task "1" -- "0..*" Transaction : generates >
+
+' Enumerations and Business Rules
+note right of Team
+  **Business Rules:**
+  - Unique team name required
+  - One license per team
+  - Team creator assigned automatically
+  - Soft delete (isActive flag)
+end note
+
+note right of User
+  **Roles:**
+  - GOON (default)
+  - HASHIRA
+  - OYAKATASAMA
+  
+  **Business Rules:**
+  - Users belong to one team
+  - Password auto-hashed
+  - Unique username & email
+end note
+
+note right of Task
+  **Status:**
+  - AVAILABLE (default)
+  - IN_PROGRESS
+  - REVIEW
+  - COMPLETED
+  
+  **Priority:**
+  - LOW
+  - MEDIUM (default)
+  - HIGH
+  
+  **Business Rules:**
+  - Must have bounty amount ≥ 0
+  - Deadline required
+  - Creator and assignee tracked
+end note
+
+note right of Notification
+  **Types:**
+  - TASK_ASSIGNED
+  - DEADLINE_REMINDER
+  - TASK_COMPLETED
+  - BOUNTY_RECEIVED
+  - PENALTY_APPLIED
+  - LICENSE_EXPIRING
+  - TASK_DELETED
+end note
+
+note right of Transaction
+  **Types:**
+  - BOUNTY
+  - PENALTY
+  - ADJUSTMENT
+  
+  **Business Rules:**
+  - Immutable records (no updates)
+  - Tracks balance before/after
+  - Linked to user and optionally task
+end note
+
+note right of License
+  **Business Rules:**
+  - One license per team (unique teamId)
+  - Unique license key
+  - Enforces maxUsers limit
+  - Validates expiration date
+  - Environment-configured keys
+end note
+
+@enduml

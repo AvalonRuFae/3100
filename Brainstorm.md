@@ -1,10 +1,10 @@
-This is a fucking project for CSCI3100, some stupid course who uses demon slayer for his project description:
+This is a project for CSCI3100:
 
-In a realm where demon slayers fought valiantly against the forces of darkness, the boss of
-the Demon Slayer Corps struggled with managing their software projects, leading to chaotic
+In a realm where warriors fought valiantly against the forces of darkness, the boss of
+the organization struggled with managing their software projects, leading to chaotic
 battles and the tragic loss of many brave warriors. Recognizing the dire need for better
 organization, Kei, the CSCI3100 lecturer, and his eager students decided to step in, determined
-to create a robust software project management tool tailored specifically for the Demon Slayers.
+to create a robust software project management tool tailored specifically for the organization.
 With their combined skills in coding and project management, they envisioned a system that
 would streamline communication, track progress, and allocate resources effectively, ultimately
 empowering the slayers to focus on their true mission: vanquishing demons and protecting

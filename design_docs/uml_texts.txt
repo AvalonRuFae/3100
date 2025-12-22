@@ -1,0 +1,739 @@
+```plantuml
+@startuml Rikugan_Business_Context
+!theme plain
+title Rikugan Business Context
+
+actor "Goons\n(Junior Programmers)" as Goons
+actor "Hashira\n(Senior Programmers)" as Hashira
+actor "Oyakatasama\n(System Administrators)" as Admin
+actor "Course Instructors" as Instructors
+
+package "Rikugan System" {
+  [Task & Bounty Management System] as Rikugan
+}
+
+Goons --> Rikugan : Browse tasks\nAccept assignments\nTrack progress\nManage earnings
+Hashira --> Rikugan : Create tasks\nSet bounties\nMonitor team\nAll Goon functions
+Admin --> Rikugan : User management\nLicense distribution\nSystem configuration\nFull access
+Instructors --> Rikugan : Evaluate system\nManage assignments\nAssess quality
+
+@enduml
+```
+
+
+
+
+
+
+
+```plantuml
+@startuml Rikugan_Technical_Context
+!theme plain
+title Rikugan Technical Context
+
+actor "Web Users" as Users
+package "Client Environment" {
+  [Web Browsers] as Browser
+  [React Frontend] as Frontend
+  [Vite Build Tool] as Vite
+}
+
+package "Server Environment" {
+  [Node.js Backend] as Backend
+  [Express.js MVC] as MVC
+  [MySQL Database] as DB
+}
+
+package "Infrastructure" {
+  [Docker Container] as Docker
+  [External Libraries] as ExtLib
+}
+
+Users --> Browser : User Interaction
+Browser --> Frontend : DOM/Events
+Frontend --> Vite : Build Process
+Frontend --> Backend : HTTPS/REST API
+Backend --> MVC : MVC Architecture
+MVC --> DB : Database Queries
+Docker --> Backend : Runtime Environment
+Backend --> ExtLib : JWT, bcrypt, etc.
+
+@enduml
+```
+
+
+
+
+
+```plantuml
+@startuml Rikugan_Component_Architecture
+!theme plain
+title Rikugan - Component Architecture
+
+package "Client Layer" {
+  [Web Browser] as Browser
+  [React Frontend] as Frontend
+  [HeroUI Components] as UI
+  [State Management] as State
+}
+
+package "API Gateway" {
+  [Express.js Server] as API
+  [Authentication Middleware] as Auth
+  [Rate Limiting] as RateLimit
+  [CORS Handler] as CORS
+}
+
+package "Business Logic Layer" {
+  [User Service] as UserSvc
+  [Task Service] as TaskSvc
+  [Bounty Service] as BountySvc
+  [Notification Service] as NotifSvc
+  [Analytics Service] as AnalyticsSvc
+}
+
+package "Data Access Layer" {
+  [User Repository] as UserRepo
+  [Task Repository] as TaskRepo
+  [Notification Repository] as NotifRepo
+}
+
+package "Database Layer" {
+  database "MySQL Database" as DB {
+    [Users Table] as UsersTable
+    [Tasks Table] as TasksTable
+    [Notifications Table] as NotifTable
+    [Licenses Table] as LicensesTable
+  }
+}
+
+package "External Services" {
+  [JWT Service] as JWT
+  [Bcrypt Service] as Bcrypt
+  [Logger Service] as Logger
+}
+
+package "Infrastructure" {
+  [Docker Container] as Docker
+  [Node.js Runtime] as NodeJS
+  [Vite Build Tool] as Vite
+}
+
+' Client Layer relationships
+Browser --> Frontend : HTTPS/WebSocket
+Frontend --> UI : Component Library
+Frontend --> State : Redux/Context API
+
+' API Gateway relationships
+Frontend --> API : REST API Calls
+API --> Auth : Authentication
+API --> RateLimit : Request Limiting
+API --> CORS : Cross-Origin Handling
+
+' Business Logic relationships
+API --> UserSvc : User Operations
+API --> TaskSvc : Task Management
+API --> BountySvc : Bounty Processing
+API --> NotifSvc : Notifications
+API --> AnalyticsSvc : Analytics
+
+' Data Access relationships
+UserSvc --> UserRepo : Data Access
+TaskSvc --> TaskRepo : Data Access
+NotifSvc --> NotifRepo : Data Access
+
+' Database relationships
+UserRepo --> UsersTable : CRUD Operations
+TaskRepo --> TasksTable : CRUD Operations
+NotifRepo --> NotifTable : CRUD Operations
+UserRepo --> LicensesTable : License Management
+
+' External Services relationships
+Auth --> JWT : Token Generation
+UserSvc --> Bcrypt : Password Hashing
+API --> Logger : Request Logging
+
+' Infrastructure relationships
+Docker --> NodeJS : Runtime Environment
+Docker --> DB : Database Container
+Frontend --> Vite : Build Process
+
+@enduml
+```
+
+
+
+
+
+
+
+
+@startuml Rikugan_Use_Cases
+!theme plain
+title Rikugan - Use Cases
+
+left to right direction
+
+actor "Goon\n(Junior Programmer)" as Goon
+actor "Hashira\n(Senior Programmer)" as Hashira
+actor "Oyakatasama\n(Administrator)" as Admin
+
+rectangle "Rikugan System" {
+  usecase "Login to System" as Login
+  usecase "View Available Tasks" as ViewTasks
+  usecase "Select Task" as SelectTask
+  usecase "Update Task Status" as UpdateStatus
+  usecase "View Profile" as ViewProfile
+  usecase "Check Earnings" as CheckEarnings
+  usecase "View Notifications" as ViewNotif
+  
+  usecase "Create Task Bounty" as CreateTask
+  usecase "Monitor Team Progress" as MonitorTeam
+  usecase "Review Task Completion" as ReviewTask
+  usecase "Manage Task Assignment" as ManageAssign
+  
+  usecase "Manage User Accounts" as ManageUsers
+  usecase "Issue Licenses" as IssueLicense
+  usecase "View System Analytics" as ViewAnalytics
+  usecase "Configure System Settings" as ConfigSystem
+  usecase "Manage Bounty Rules" as ManageBounty
+  usecase "Generate Reports" as GenerateReports
+}
+
+' Goon interactions
+Goon --> Login
+Goon --> ViewTasks
+Goon --> SelectTask
+Goon --> UpdateStatus
+Goon --> ViewProfile
+Goon --> CheckEarnings
+Goon --> ViewNotif
+
+' Hashira interactions (includes all Goon capabilities)
+Hashira --> Login
+Hashira --> ViewTasks
+Hashira --> SelectTask
+Hashira --> UpdateStatus
+Hashira --> ViewProfile
+Hashira --> CheckEarnings
+Hashira --> ViewNotif
+Hashira --> CreateTask
+Hashira --> MonitorTeam
+Hashira --> ReviewTask
+Hashira --> ManageAssign
+
+' Admin interactions (includes all capabilities)
+Admin --> Login
+Admin --> ViewTasks
+Admin --> ViewProfile
+Admin --> ViewNotif
+Admin --> CreateTask
+Admin --> MonitorTeam
+Admin --> ReviewTask
+Admin --> ManageUsers
+Admin --> IssueLicense
+Admin --> ViewAnalytics
+Admin --> ConfigSystem
+Admin --> ManageBounty
+Admin --> GenerateReports
+
+' Relationships
+CreateTask ..> ViewTasks : updates
+SelectTask ..> UpdateStatus : enables
+UpdateStatus ..> ViewNotif : triggers
+ManageUsers ..> IssueLicense : includes
+ReviewTask ..> ManageBounty : affects
+
+@enduml
+
+
+
+
+
+
+
+
+
+@startuml Rikugan_Class_Diagram
+!theme plain
+title Rikugan - Class Diagram
+
+class User {
+  -id: number
+  -username: string
+  -email: string
+  -passwordHash: string
+  -role: UserRole
+  -balance: number
+  -createdAt: Date
+  -updatedAt: Date
+  +login(credentials: LoginCredentials): AuthToken
+  +updateProfile(data: ProfileData): void
+  +checkBalance(): number
+  +getTaskHistory(): Task[]
+}
+
+enum UserRole {
+  GOON
+  HASHIRA
+  OYAKATASAMA
+}
+
+class Task {
+  -id: number
+  -title: string
+  -description: string
+  -bountyAmount: number
+  -deadline: Date
+  -status: TaskStatus
+  -priority: Priority
+  -createdBy: number
+  -assignedTo: number
+  -createdAt: Date
+  -updatedAt: Date
+  +assign(userId: number): void
+  +updateStatus(status: TaskStatus): void
+  +calculatePenalty(): number
+  +isOverdue(): boolean
+}
+
+enum TaskStatus {
+  AVAILABLE
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+class Bounty {
+  -id: number
+  -taskId: number
+  -amount: number
+  -status: BountyStatus
+  -paidAt: Date
+  +process(): void
+  +calculateBonus(): number
+}
+
+enum BountyStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+class Notification {
+  -id: number
+  -userId: number
+  -type: NotificationType
+  -title: string
+  -message: string
+  -readStatus: boolean
+  -createdAt: Date
+  +markAsRead(): void
+  +send(): void
+}
+
+enum NotificationType {
+  TASK_ASSIGNED
+  DEADLINE_REMINDER
+  TASK_COMPLETED
+  BOUNTY_RECEIVED
+  ACHIEVEMENT_UNLOCKED
+}
+
+class License {
+  -id: number
+  -userId: number
+  -licenseKey: string
+  -expiryDate: Date
+  -status: LicenseStatus
+  -createdAt: Date
+  +isValid(): boolean
+  +renew(): void
+  +revoke(): void
+}
+
+enum LicenseStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+class ProjectBoard {
+  -id: number
+  -name: string
+  -description: string
+  -tasks: Task[]
+  +addTask(task: Task): void
+  +moveTask(taskId: number, status: TaskStatus): void
+  +getTasksByStatus(status: TaskStatus): Task[]
+}
+
+' Relationships
+User ||--o{ Task : creates
+User ||--o{ Task : assigned_to
+User ||--o{ Bounty : receives
+User ||--o{ Notification : receives
+User ||--|| License : has
+
+Task ||--|| Bounty : has
+Task }o--|| ProjectBoard : belongs_to
+
+User }o--|| UserRole : has
+Task }o--|| TaskStatus : has
+Task }o--|| Priority : has
+Bounty }o--|| BountyStatus : has
+Notification }o--|| NotificationType : has
+License }o--|| LicenseStatus : has
+
+@enduml
+
+
+
+
+@startuml
+!theme plain
+title User Authentication Flow
+
+actor "User" as U
+participant "Frontend" as F
+participant "API Gateway" as A
+participant "Auth Service" as AS
+participant "Database" as DB
+
+U->>F: Enter login credentials
+F->>A: POST /api/v1/auth/login
+A->>AS: authenticate(credentials)
+AS->>DB: SELECT user WHERE username=? AND active=true
+DB-->>AS: User data
+AS->>AS: bcrypt.compare(password, hashedPassword)
+AS->>AS: generateJWT(user.id, user.role)
+AS-->>A: JWT token + user data
+A-->>F: Authentication response
+F->>F: Store token in localStorage
+F-->>U: Redirect to role-appropriate dashboard
+@enduml
+
+
+
+
+
+
+
+
+
+```plantuml
+@startuml Rikugan_Task_Assignment_Sequence
+!theme plain
+title Task Assignment and Completion Flow
+
+actor "Goon" as G
+participant "Frontend" as F
+participant "API Gateway" as API
+participant "Task Service" as TS
+participant "Notification Service" as NS
+participant "Bounty Service" as BS
+participant "Database" as DB
+
+== Task Selection ==
+G -> F: View available tasks
+F -> API: GET /api/v1/tasks?status=available
+API -> TS: getAvailableTasks()
+TS -> DB: SELECT * FROM tasks WHERE status='available'
+DB --> TS: task list
+TS --> API: available tasks
+API --> F: JSON response
+F --> G: Display task cards
+
+G -> F: Select task
+F -> API: POST /api/v1/tasks/{id}/assign
+API -> TS: assignTask(taskId, userId)
+TS -> DB: UPDATE tasks SET assigned_to=userId, status='in_progress'
+DB --> TS: success
+TS -> NS: notifyTaskAssignment(taskId, userId)
+NS -> DB: INSERT INTO notifications
+TS --> API: assignment confirmation
+API --> F: success response
+F --> G: Task assigned confirmation
+
+== Task Progress Update ==
+G -> F: Update task status
+F -> API: PUT /api/v1/tasks/{id}/status
+API -> TS: updateTaskStatus(taskId, newStatus)
+TS -> DB: UPDATE tasks SET status=newStatus
+DB --> TS: success
+TS -> NS: notifyStatusChange(taskId, newStatus)
+TS --> API: update confirmation
+API --> F: success response
+F --> G: Status updated
+
+== Task Completion ==
+G -> F: Mark task complete
+F -> API: PUT /api/v1/tasks/{id}/complete
+API -> TS: completeTask(taskId)
+TS -> DB: UPDATE tasks SET status='completed'
+TS -> BS: processBounty(taskId, userId)
+BS -> DB: UPDATE users SET balance=balance+bounty
+BS -> NS: notifyBountyAwarded(userId, amount)
+TS --> API: completion confirmation
+API --> F: success response
+F --> G: Task completed + bounty awarded
+
+@enduml
+```
+
+
+@startuml Rikugan_Notification_Flow
+!theme plain
+title Real-time Notification System Flow
+
+actor "User" as U
+participant "Frontend" as F
+participant "API Gateway" as API
+participant "Notification Service" as NS
+participant "Task Service" as TS
+participant "WebSocket Server" as WS
+participant "Database" as DB
+
+== Notification Generation ==
+U -> F: Perform action (create task, update status, etc.)
+F -> API: API call for action
+API -> TS: Process business logic
+TS -> NS: triggerNotification(event, targetUsers, data)
+NS -> NS: createNotification(type, message, recipients)
+NS -> DB: INSERT INTO notifications
+DB --> NS: notification_id
+NS -> WS: broadcastToUsers(userIds, notification)
+WS --> F: Real-time notification push
+F -> F: Update notification badge/display
+F --> U: Show notification popup
+
+== Notification Retrieval ==
+U -> F: Check notifications
+F -> API: GET /api/v1/notifications
+API -> NS: getUserNotifications(userId, unread_only)
+NS -> DB: SELECT * FROM notifications WHERE user_id=? AND read_status=false
+DB --> NS: notification list
+NS --> API: formatted notifications
+API --> F: JSON response
+F --> U: Display notification list
+
+== Notification Management ==
+U -> F: Mark notification as read
+F -> API: PUT /api/v1/notifications/{id}/read
+API -> NS: markAsRead(notificationId, userId)
+NS -> DB: UPDATE notifications SET read_status=true WHERE id=? AND user_id=?
+DB --> NS: update confirmation
+NS --> API: success response
+API --> F: confirmation
+F -> F: Update UI state
+F --> U: Remove notification badge
+
+== System Notifications ==
+note over NS: Automated system events
+NS -> NS: checkDeadlineReminders()
+NS -> DB: SELECT tasks WHERE deadline < NOW() + INTERVAL 24 HOUR
+DB --> NS: upcoming deadlines
+NS -> NS: createDeadlineNotifications()
+NS -> DB: INSERT INTO notifications (batch)
+NS -> WS: broadcastDeadlineAlerts()
+WS --> F: Push deadline warnings
+F --> U: Display deadline alerts
+
+@enduml
+
+
+
+
+
+
+
+
+
+@startuml Rikugan_Deployment_Architecture
+!theme plain
+title Rikugan Deployment Architecture
+
+package "Development Environment" {
+  [Local Dev Tools\n(Node.js, Git, VSCode)] as DevTools
+}
+
+package "Docker Host" {
+  package "Container Platform" {
+    [Frontend Container\n(React/Vite + nginx)] as FrontendContainer
+    [Backend Container\n(Node.js/Express)] as BackendContainer
+    [Database Container\n(MySQL 8.0+)] as DatabaseContainer
+    [Reverse Proxy\n(nginx)] as ReverseProxy
+  }
+}
+
+package "Client Environment" {
+  [Web Browser\n(Chrome, Firefox, Safari)] as Browser
+}
+
+' Relationships
+DevTools --> FrontendContainer : Deploy & Debug
+DevTools --> BackendContainer : Deploy & Debug
+Browser --> ReverseProxy : HTTPS Requests
+ReverseProxy --> FrontendContainer : Static Files
+ReverseProxy --> BackendContainer : API Calls
+BackendContainer --> DatabaseContainer : Database Queries
+FrontendContainer --> BackendContainer : REST API
+
+' Network connections
+Browser ..> FrontendContainer : Port 80/443
+ReverseProxy ..> FrontendContainer : Port 3000
+ReverseProxy ..> BackendContainer : Port 3001
+BackendContainer ..> DatabaseContainer : Port 3306
+
+note right of DevTools
+  Development features:
+  - Hot reload
+  - Debug ports
+  - Volume mounting
+end note
+
+note right of ReverseProxy
+  Production features:
+  - Load balancing
+  - SSL termination
+  - Static file serving
+  - API routing
+end note
+
+@enduml
+
+
+
+
+
+
+```plantuml
+@startuml Rikugan_Deployment_Architecture
+!theme plain
+title Rikugan Deployment Architecture
+
+package "Development Environment" {
+  [Local Dev Tools\n(Node.js, Git, VSCode)] as DevTools
+}
+
+package "Docker Host" {
+  package "Container Platform" {
+    [Frontend Container\n(React/Vite + nginx)] as FrontendContainer
+    [Backend Container\n(Node.js/Express)] as BackendContainer
+    [Database Container\n(MySQL 8.0+)] as DatabaseContainer
+    [Reverse Proxy\n(nginx)] as ReverseProxy
+  }
+}
+
+package "Client Environment" {
+  [Web Browser\n(Chrome, Firefox, Safari)] as Browser
+}
+
+' Relationships
+DevTools --> FrontendContainer : Deploy & Debug
+DevTools --> BackendContainer : Deploy & Debug
+Browser --> ReverseProxy : HTTPS Requests
+ReverseProxy --> FrontendContainer : Static Files
+ReverseProxy --> BackendContainer : API Calls
+BackendContainer --> DatabaseContainer : Database Queries
+FrontendContainer --> BackendContainer : REST API
+
+' Network connections
+Browser ..> FrontendContainer : Port 80/443
+ReverseProxy ..> FrontendContainer : Port 3000
+ReverseProxy ..> BackendContainer : Port 3001
+BackendContainer ..> DatabaseContainer : Port 3306
+
+note right of DevTools
+  Development features:
+  - Hot reload
+  - Debug ports
+  - Volume mounting
+end note
+
+note right of ReverseProxy
+  Production features:
+  - Load balancing
+  - SSL termination
+  - Static file serving
+  - API routing
+end note
+
+@enduml
+```
+
+
+
+```plantuml
+@startuml Rikugan_Domain_Model
+!theme plain
+title Rikugan Domain Model
+
+class User {
+  -id: number
+  -username: string
+  -email: string
+  -role: UserRole
+  -balance: number
+  +canCreateTask(): boolean
+  +canAssignTask(): boolean
+  +hasValidLicense(): boolean
+  +calculateTotalEarnings(): number
+}
+
+class Task {
+  -id: number
+  -title: string
+  -description: string
+  -bountyAmount: number
+  -deadline: Date
+  -status: TaskStatus
+  -priority: Priority
+  +isOverdue(): boolean
+  +canBeAssignedTo(user: User): boolean
+  +calculatePenalty(): number
+  +getTimeRemaining(): Duration
+}
+
+class Bounty {
+  -id: number
+  -taskId: number
+  -amount: number
+  -status: BountyStatus
+  +process(): void
+  +calculateBonus(): number
+  +canBePaid(): boolean
+}
+
+class License {
+  -id: number
+  -userId: number
+  -licenseKey: string
+  -expiryDate: Date
+  -status: LicenseStatus
+}
+
+class Notification {
+  -id: number
+  -userId: number
+  -type: NotificationType
+  -message: string
+  -readStatus: boolean
+}
+
+User ||--o{ Task : creates
+User ||--o{ Task : assigned_to
+User ||--o{ Bounty : receives
+User ||--|| License : has
+Task ||--|| Bounty : has
+User ||--o{ Notification : receives
+
+@enduml
+```

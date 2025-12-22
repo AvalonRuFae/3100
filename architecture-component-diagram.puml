@@ -1,6 +1,6 @@
-@startuml DSCPMS_Architecture_Component_Diagram
+@startuml Rikugan_Architecture_Component_Diagram
 !theme plain
-title Demon Slayer Corps Project Management System - Architecture Component Diagram
+title Rikugan - Architecture Component Diagram
 
 package "Presentation Layer" {
   [Web Browser] as Browser
@@ -44,7 +44,6 @@ package "Data Layer" {
     [Bounties Table] as BountiesDB
     [Notifications Table] as NotificationsDB
     [Licenses Table] as LicensesDB
-    [Audit Logs Table] as AuditDB
   }
 }
 
@@ -95,7 +94,6 @@ UserRepo --> UsersDB : SQL Queries
 UserRepo --> LicensesDB : License Queries
 TaskRepo --> TasksDB : SQL Queries
 BountyRepo --> BountiesDB : SQL Queries
-BountyRepo --> AuditDB : Audit Logging
 NotifRepo --> NotificationsDB : SQL Queries
 
 ' External Dependencies
