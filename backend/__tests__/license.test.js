@@ -5,6 +5,16 @@ const { User, License } = require('../src/models');
 const LicenseService = require('../src/services/LicenseService');
 const { validateLicenseKey } = require('../src/middleware/validateLicense');
 
+/**
+ * License Management Tests
+ * 
+ * Test Documentation References:
+ * - TC-LICENSE-001: Expired License Key Rejected (Section 4.3)
+ * - TC-LICENSE-002: Invalid License Key Rejected (Section 4.3)
+ * 
+ * See TESTING_DOCUMENTATION.pdf Section 4.3 for detailed test cases
+ */
+
 describe('License API and Service (New Flow)', () => {
   let userToken, teamUserToken;
   let userWithoutTeam, userWithTeam;

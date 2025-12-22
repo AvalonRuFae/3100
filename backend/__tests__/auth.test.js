@@ -7,6 +7,11 @@ const { User, Team, License } = require('../src/models');
  * Auth API Tests
  * Based on auth_flow.puml specifications
  * 
+ * Test Documentation References:
+ * - TC-AUTH-001: User Registration with team_id=NULL (Section 4.1)
+ * - TC-AUTH-002: Login with Team Check and no_team Flag (Section 4.1)
+ * - TC-AUTH-003: Role-Based Access Control (Section 4.1)
+ * 
  * Tests cover:
  * - User registration with team_id=NULL
  * - Login flow with team checks
@@ -15,6 +20,8 @@ const { User, Team, License } = require('../src/models');
  * - JWT token expiration (8 hours)
  * - Role-based authorization
  * - Team-filtered resource access
+ * 
+ * See TESTING_DOCUMENTATION.pdf Section 4.1 for detailed test cases
  */
 describe('Auth API - auth_flow.puml Compliance', () => {
   beforeAll(async () => {
@@ -32,6 +39,12 @@ describe('Auth API - auth_flow.puml Compliance', () => {
   });
 
   describe('POST /api/v1/auth/register - User Registration', () => {
+    /**
+     * Test Case: TC-AUTH-001
+     * Reference: TESTING_DOCUMENTATION.md Section 4.1
+     * Objective: Verify new users register with team_id=NULL
+     * Priority: High | Category: Functional Testing
+     */
     it('should register a new user with team_id=NULL', async () => {
       const res = await request(app)
         .post('/api/v1/auth/register')
@@ -192,6 +205,12 @@ describe('Auth API - auth_flow.puml Compliance', () => {
       await User.update({ teamId: expiredTeam.id }, { where: { id: userWithExpiredLicenseId } });
     });
 
+    /**
+     * Test Case: TC-AUTH-002
+     * Reference: TESTING_DOCUMENTATION Section 4.1
+     * Objective: Verify login returns JWT token and sets no_team flag when user has no team
+     * Priority: High | Category: Functional Testing
+     */
     it('should login user with no team and return no_team flag', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
@@ -344,6 +363,440 @@ describe('Auth API - auth_flow.puml Compliance', () => {
       // No backend endpoint required
       // This test documents the expected behavior
       expect(true).toBe(true);
+    });
+  });
+
+  describe('POST /api/v1/auth/register - Additional Validation Tests', () => {
+    it('should fail with duplicate email', async () => {
+      await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'uniqueuser',
+          email: 'duplicate@example.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
+
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'anotheruser',
+          email: 'duplicate@example.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/already exists/i);
+    });
+
+    it('should fail with missing username', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          email: 'test@example.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should fail with missing email', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'testuser',
+          password: 'Test123!',
+          role: 'GOON'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should fail with missing password', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'testuser',
+          email: 'test@example.com',
+          role: 'GOON'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should set default role to GOON if not provided', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'defaultrole',
+          email: 'defaultrole@example.com',
+          password: 'Test123!'
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.data.role).toBe('GOON');
+    });
+
+    it('should allow OYAKATASAMA role registration', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'adminuser',
+          email: 'admin@example.com',
+          password: 'Test123!',
+          role: 'OYAKATASAMA'
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.data.role).toBe('OYAKATASAMA');
+    });
+
+    it('should initialize balance to 0', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'balancetest',
+          email: 'balance@example.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(parseFloat(res.body.data.balance)).toBe(0);
+    });
+
+    it('should set isActive to true by default', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'activetest',
+          email: 'active@example.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
+
+      expect(res.statusCode).toBe(201);
+      expect(res.body.data.isActive).toBe(true);
+    });
+  });
+
+  describe('POST /api/v1/auth/login - Additional Login Tests', () => {
+    beforeAll(async () => {
+      // Create inactive user
+      const user = await User.create({
+        username: 'inactiveuser',
+        email: 'inactive@example.com',
+        password: 'Test123!',
+        role: 'GOON',
+        isActive: false
+      });
+    });
+
+    it('should fail with inactive account', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: 'inactiveuser',
+          password: 'Test123!'
+        });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/disabled|inactive/i);
+    });
+
+    it('should allow login with email instead of username', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: 'login@example.com',
+          password: 'Test123!'
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('token');
+    });
+
+    it('should fail with empty username', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: '',
+          password: 'Test123!'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should fail with empty password', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: 'logintest',
+          password: ''
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should include teamName and license in JWT payload when user has team', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: 'teamuser',
+          password: 'Test123!'
+        });
+
+      expect(res.statusCode).toBe(200);
+      
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.decode(res.body.data.token);
+      
+      expect(decoded).toHaveProperty('teamId');
+      expect(decoded).toHaveProperty('teamName');
+      expect(decoded).toHaveProperty('licenseKey');
+    });
+  });
+
+  describe('POST /api/v1/auth/change-password - Password Change', () => {
+    let userToken;
+    let userId;
+
+    beforeAll(async () => {
+      const registerRes = await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'passwordtest',
+          email: 'passwordtest@example.com',
+          password: 'OldPassword123!',
+          role: 'GOON'
+        });
+
+      userId = registerRes.body.data.id;
+
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: 'passwordtest',
+          password: 'OldPassword123!'
+        });
+
+      userToken = loginRes.body.data.token;
+    });
+
+    it('should successfully change password with correct old password', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/change-password')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          oldPassword: 'OldPassword123!',
+          newPassword: 'NewPassword123!'
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.message).toMatch(/password changed/i);
+    });
+
+    it('should allow login with new password after change', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: 'passwordtest',
+          password: 'NewPassword123!'
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+    });
+
+    it('should fail to change password with incorrect old password', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/change-password')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          oldPassword: 'WrongOldPassword!',
+          newPassword: 'AnotherNewPassword123!'
+        });
+
+      expect(res.statusCode).toBe(500);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should fail without authentication token', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/change-password')
+        .send({
+          oldPassword: 'NewPassword123!',
+          newPassword: 'AnotherPassword123!'
+        });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should fail with short new password', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/change-password')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          oldPassword: 'NewPassword123!',
+          newPassword: 'short'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should fail with missing oldPassword', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/change-password')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          newPassword: 'AnotherPassword123!'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should fail with missing newPassword', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/change-password')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({
+          oldPassword: 'NewPassword123!'
+        });
+
+      expect(res.statusCode).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+  });
+
+  /**
+   * Test Case: TC-AUTH-003
+   * Reference: TESTING_DOCUMENTATION Section 4.1
+   * Objective: Verify that role-based permissions are enforced (GOON vs HASHIRA vs OYAKATASAMA)
+   * Priority: High | Category: Security Testing
+   */
+  describe('Authorization Middleware Tests', () => {
+    let goonToken, hashiraToken, adminToken;
+
+    beforeAll(async () => {
+      // Register and login users with different roles
+      await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'authtestgoon',
+          email: 'authtestgoon@example.com',
+          password: 'Test123!',
+          role: 'GOON'
+        });
+
+      await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'authtesthashira',
+          email: 'authtesthashira@example.com',
+          password: 'Test123!',
+          role: 'HASHIRA'
+        });
+
+      await request(app)
+        .post('/api/v1/auth/register')
+        .send({
+          username: 'authtestadmin',
+          email: 'authtestadmin@example.com',
+          password: 'Test123!',
+          role: 'OYAKATASAMA'
+        });
+
+      const goonLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'authtestgoon', password: 'Test123!' });
+      goonToken = goonLogin.body.data.token;
+
+      const hashiraLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'authtesthashira', password: 'Test123!' });
+      hashiraToken = hashiraLogin.body.data.token;
+
+      const adminLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'authtestadmin', password: 'Test123!' });
+      adminToken = adminLogin.body.data.token;
+    });
+
+    it('should authenticate valid token and attach user to request', async () => {
+      const res = await request(app)
+        .get('/api/v1/auth/me')
+        .set('Authorization', `Bearer ${goonToken}`);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.data.username).toBe('authtestgoon');
+      expect(res.body.data.role).toBe('GOON');
+    });
+
+    it('should reject malformed authorization header', async () => {
+      const res = await request(app)
+        .get('/api/v1/auth/me')
+        .set('Authorization', 'InvalidFormat');
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should reject token with invalid signature', async () => {
+      const res = await request(app)
+        .get('/api/v1/auth/me')
+        .set('Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature');
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body.success).toBe(false);
+    });
+  });
+
+  describe('JWT Token Structure Tests', () => {
+    it('should generate token with correct expiration time (8 hours)', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: 'logintest',
+          password: 'Test123!'
+        });
+
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.decode(res.body.data.token);
+      
+      const expectedExpiration = 8 * 60 * 60; // 8 hours in seconds
+      const actualExpiration = decoded.exp - decoded.iat;
+      
+      expect(actualExpiration).toBe(expectedExpiration);
+    });
+
+    it('should include user id in token payload', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          username: 'logintest',
+          password: 'Test123!'
+        });
+
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.decode(res.body.data.token);
+      
+      expect(decoded).toHaveProperty('id');
+      expect(decoded).toHaveProperty('username');
+      expect(decoded).toHaveProperty('role');
     });
   });
 });

@@ -127,18 +127,18 @@ class UserController {
     }
   }
 
-  async getLeaderboard(req, res, next) {
-    try {
-      const leaderboard = await UserService.getLeaderboard(req.query.limit);
+  // async getLeaderboard(req, res, next) {
+  //   try {
+  //     const leaderboard = await UserService.getLeaderboard(req.query.limit);
 
-      res.json({
-        success: true,
-        data: leaderboard
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
+  //     res.json({
+  //       success: true,
+  //       data: leaderboard
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // }
 }
 
 module.exports = new UserController();

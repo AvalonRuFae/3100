@@ -1,0 +1,127 @@
+{
+  "TASK-003": {
+    "description": "Task Assignment - Assign task to goon",
+    "test": "should allow Goon to assign task to themselves",
+    "snippet": "const res = await request(app)\n  .post(`/api/v1/tasks/${taskId}/assign`)\n  .set('Authorization', `Bearer ${goonToken}`);\n\nexpect(res.statusCode).toBe(200);\nexpect(res.body.data.status).toBe('IN_PROGRESS');"
+  },
+  "TASK-004": {
+    "description": "Kanban Board - Retrieve kanban board",
+    "test": "should get kanban board",
+    "snippet": "const res = await request(app)\n  .get('/api/v1/tasks/board')\n  .set('Authorization', `Bearer ${goonToken}`);\n\nexpect(res.statusCode).toBe(200);\nexpect(res.body.data).toHaveProperty('available');\nexpect(res.body.data).toHaveProperty('inProgress');\nexpect(res.body.data).toHaveProperty('review');\nexpect(res.body.data).toHaveProperty('completed');"
+  },
+  "TASK-005a": {
+    "description": "Task Status Update - Update task status by assignee",
+    "test": "should allow assigned user to update status",
+    "snippet": "const res = await request(app)\n  .put(`/api/v1/tasks/${taskId}/status`)\n  .set('Authorization', `Bearer ${goonToken}`)\n  .send({ status: 'REVIEW' });\n\nexpect(res.statusCode).toBe(200);\nexpect(res.body.data.status).toBe('REVIEW');"
+  },
+  "TASK-005b": {
+    "description": "Task Limit - Task limit for unlicensed teams",
+    "test": "Not explicitly found - but license validation applies to task creation",
+    "snippet": "// Task limits enforced via license validation middleware\n// See validateLicense middleware and license service tests"
+  },
+  "LICENSE-002": {
+    "description": "Invalid License - Test for invalid license key",
+    "test": "should reject invalid license key",
+    "snippet": "const result = await LicenseService.validateForTeamCreation('INVALID-KEY-12345');\n\nexpect(result.valid).toBe(false);\nexpect(result.error).toBe('Invalid or expired license key');"
+  },
+  "LICENSE-003": {
+    "description": "Expired License - Test for expired license",
+    "test": "should reject expired license key",
+    "snippet": "const result = await LicenseService.validateForTeamCreation('RIKUGAN-2025-EXPIRED-KEY');\n\nexpect(result.valid).toBe(false);\nexpect(result.error).toBe('Invalid or expired license key');"
+  },
+  "LICENSE-004": {
+    "description": "License Assignment - License assignment to team",
+    "test": "should create license record for team",
+    "snippet": "const licenseData = {\n  teamId: 1,\n  teamName: 'Test Team',\n  key: 'RIKUGAN-2025-VALID-KEY-A',\n  maxUsers: 50,\n  expiryDate: new Date('2026-12-31')\n};\n\nconst license = await LicenseService.createLicenseForTeam(licenseData);\n\nexpect(license).toBeDefined();\nexpect(license.teamId).toBe(1);\nexpect(license.licenseKey).toBe('RIKUGAN-2025-VALID-KEY-A');\nexpect(license.maxUsers).toBe(50);\nexpect(license.isActive).toBe(true);"
+  },
+  "LICENSE-005": {
+    "description": "User Limit - User limit enforcement",
+    "test": "should enforce license capacity limits",
+    "snippet": "// Add users up to capacity (10 users total)\nfor (let i = 0; i < 10; i++) {\n  await TeamService.addMember(team.id, {\n    username: `capacityuser${i}`,\n    email: `capacityuser${i}@test.com`,\n    password: 'Test123!',\n    role: 'GOON'\n  });\n}\n\n// Try to add one more user beyond capacity\nawait expect(\n  TeamService.addMember(team.id, {\n    username: 'extrauser',\n    email: 'extra@test.com',\n    password: 'Test123!',\n    role: 'GOON'\n  })\n).rejects.toThrow('maximum user capacity');"
+  },
+  "LICENSE-006": {
+    "description": "Task Limit - Task limit enforcement",
+    "test": "Not explicitly found as separate test - enforced via license middleware",
+    "snippet": "// Task limits enforced via validateLicense middleware\n// License defines maxTasks and middleware checks before creation"
+  },
+  "BOUNTY-002": {
+    "description": "Reward Distribution - Automatic bounty reward",
+    "test": "Bounty processing updates user balance correctly",
+    "snippet": "const result = await BountyService.processBounty(normalUser.id, testTask.id, 50);\n\nexpect(result).toHaveProperty('balanceBefore');\nexpect(result).toHaveProperty('balanceAfter');\nexpect(parseFloat(result.balanceAfter)).toBeGreaterThan(parseFloat(result.balanceBefore));"
+  },
+  "BOUNTY-003": {
+    "description": "Penalty - Penalty for missed deadlines",
+    "test": "Penalty application reduces user balance correctly",
+    "snippet": "const result = await BountyService.applyPenalty(normalUser.id, testTask.id, 25, 'Test penalty reason');\n\nexpect(result).toHaveProperty('balanceBefore');\nexpect(result).toHaveProperty('balanceAfter');\nexpect(result).toHaveProperty('penaltyAmount');\nexpect(parseFloat(result.balanceAfter)).toBeLessThan(parseFloat(result.balanceBefore));"
+  },
+  "TEAM-002": {
+    "description": "Add Member - Add user to team",
+    "test": "should create new user and add to team",
+    "snippet": "const response = await request(app)\n  .post(`/api/v1/teams/${teamId}/members`)\n  .set('Authorization', `Bearer ${adminToken}`)\n  .send({ \n    username: 'newgoon',\n    email: 'newgoon@test.com',\n    password: 'NewGoon123!',\n    role: 'GOON'\n  });\n\nexpect(response.status).toBe(201);\nexpect(response.body.success).toBe(true);\nexpect(response.body.data.user).toBeDefined();\nexpect(response.body.data.user.username).toBe('newgoon');\nexpect(response.body.data.user.teamId).toBe(teamId.toString());"
+  },
+  "TEAM-003": {
+    "description": "Remove Member - Remove user from team",
+    "test": "should remove member from team",
+    "snippet": "const response = await request(app)\n  .delete(`/api/v1/teams/${teamId}/members/${newUserId}`)\n  .set('Authorization', `Bearer ${adminToken}`);\n\nexpect(response.status).toBe(200);\nexpect(response.body.success).toBe(true);\n\n// Verify user is removed from team\nconst user = await User.findByPk(newUserId);\nexpect(user.teamId).toBeNull();"
+  },
+  "TEAM-004": {
+    "description": "Resource Isolation - Team-based access control",
+    "test": "should support team_id on tasks for team isolation",
+    "snippet": "const task = await Task.create({\n  title: 'Team Task',\n  description: 'Task with team_id',\n  bountyAmount: 100,\n  deadline: new Date(Date.now() + 86400000),\n  createdBy: user.id,\n  teamId: team.id\n});\n\nexpect(task.teamId).toBe(team.id);"
+  },
+  "TEAM-005": {
+    "description": "Team Deletion - Delete team with cascade",
+    "test": "should deactivate team and remove members",
+    "snippet": "const response = await request(app)\n  .delete(`/api/v1/teams/${teamId}`)\n  .set('Authorization', `Bearer ${adminToken}`);\n\nexpect(response.status).toBe(200);\nexpect(response.body.success).toBe(true);\n\n// Verify team is deactivated\nconst team = await Team.findByPk(teamId);\nexpect(team.isActive).toBe(false);\n\n// Verify creator is removed from team\nconst user = await User.findByPk(adminUser.id);\nexpect(user.teamId).toBeNull();"
+  },
+  "NOTIF-002": {
+    "description": "Mark Notification as Read",
+    "test": "should mark notification as read with authorization checks",
+    "snippet": "const result = await NotificationService.markAsRead(notification.id, testUser1.id);\n\nexpect(result.readStatus).toBe(true);\n\n// Verify persistence\nconst updated = await Notification.findByPk(notification.id);\nexpect(updated.readStatus).toBe(true);"
+  },
+  "NOTIF-003": {
+    "description": "Unread Count",
+    "test": "should return correct unread count in all scenarios",
+    "snippet": "let count = await NotificationService.getUnreadCount(testUser1.id);\n\nexpect(count).toBe(2);\n\n// Mark all as read - should return 0\nawait Notification.update({ readStatus: true }, { where: { userId: testUser1.id } });\ncount = await NotificationService.getUnreadCount(testUser1.id);\nexpect(count).toBe(0);"
+  },
+  "NOTIF-004": {
+    "description": "Mark All as Read",
+    "test": "should bulk mark all user notifications as read with isolation",
+    "snippet": "const result = await NotificationService.markAllAsRead(testUser1.id);\n\nexpect(result).toBe(true);\n\n// Verify user1 has 0 unread\nconst user1Unread = await NotificationService.getUnreadCount(testUser1.id);\nexpect(user1Unread).toBe(0);\n\n// Verify user2 still has 1 unread (isolation)\nconst user2Unread = await NotificationService.getUnreadCount(testUser2.id);\nexpect(user2Unread).toBe(1);"
+  },
+  "NOTIF-005": {
+    "description": "Delete Notification",
+    "test": "should delete notification with authorization",
+    "snippet": "const result = await NotificationService.deleteNotification(notification.id, testUser1.id);\n\nexpect(result).toBe(true);\n\n// Verify deleted\nconst deleted = await Notification.findByPk(notification.id);\nexpect(deleted).toBeNull();"
+  },
+  "DB-001": {
+    "description": "Database Connection",
+    "test": "should successfully connect to database",
+    "snippet": "const result = await sequelize.authenticate();\n\nexpect(result).toBeUndefined(); // authenticate() returns undefined on success"
+  },
+  "DB-002": {
+    "description": "User Model Validation - Unique username",
+    "test": "should enforce unique username",
+    "snippet": "await User.create({\n  username: 'unique',\n  email: 'unique1@example.com',\n  password: await bcrypt.hash('Test123!', 10),\n  role: 'GOON'\n});\n\nawait expect(\n  User.create({\n    username: 'unique',\n    email: 'unique2@example.com',\n    password: await bcrypt.hash('Test123!', 10),\n    role: 'GOON'\n  })\n).rejects.toThrow();"
+  },
+  "DB-003": {
+    "description": "Task Model Creation",
+    "test": "should create task with valid data",
+    "snippet": "const task = await Task.create({\n  title: 'Test Task',\n  description: 'This is a test task',\n  bountyAmount: 100.00,\n  deadline: new Date(Date.now() + 86400000),\n  priority: 'HIGH',\n  createdBy: testUser.id\n});\n\nexpect(task.id).toBeTruthy();\nexpect(task.title).toBe('Test Task');\nexpect(parseFloat(task.bountyAmount)).toBe(100.00);"
+  },
+  "DB-004": {
+    "description": "License Model Validation - Unique license key",
+    "test": "should require unique licenseKey",
+    "snippet": "await License.create({\n  teamId: team1.id,\n  teamName: 'Team 1',\n  licenseKey: 'DUPLICATE-KEY',\n  isActive: true,\n  expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)\n});\n\nawait expect(\n  License.create({\n    teamId: team2.id,\n    teamName: 'Team 2',\n    licenseKey: 'DUPLICATE-KEY',\n    isActive: true,\n    expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)\n  })\n).rejects.toThrow();"
+  },
+  "DB-005": {
+    "description": "Notification Model Creation",
+    "test": "should create notification with valid data",
+    "snippet": "const notification = await Notification.create({\n  userId: testUser.id,\n  type: 'TASK_ASSIGNED',\n  title: 'New Task',\n  message: 'You have been assigned a new task',\n  readStatus: false\n});\n\nexpect(notification.id).toBeTruthy();\nexpect(notification.userId).toBe(testUser.id);\nexpect(notification.type).toBe('TASK_ASSIGNED');"
+  },
+  "DB-006": {
+    "description": "Transaction Model Creation",
+    "test": "should create transaction with valid data",
+    "snippet": "const transaction = await Transaction.create({\n  userId: testUser.id,\n  taskId: testTask.id,\n  type: 'BOUNTY',\n  amount: 100.00,\n  description: 'Task completion bounty',\n  balanceBefore: 0,\n  balanceAfter: 100\n});\n\nexpect(transaction.id).toBeTruthy();\nexpect(parseFloat(transaction.amount)).toBe(100.00);\nexpect(transaction.type).toBe('BOUNTY');"
+  }
+}

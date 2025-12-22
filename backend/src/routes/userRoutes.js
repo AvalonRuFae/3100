@@ -51,6 +51,6 @@ router.delete('/:id',
 );
 
 // Get leaderboard
-router.get('/stats/leaderboard', UserController.getLeaderboard);
+// router.get('/stats/leaderboard', UserController.getLeaderboard);
 
 module.exports = router;

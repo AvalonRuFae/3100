@@ -234,43 +234,64 @@ class TeamController {
   }
 
   /**
-   * Add member to team
+   * Add member to team (Create new user account)
    * 
    * POST /api/v1/teams/:id/members
    * 
    * Request:
    * - Body:
    *   {
-   *     userId: number (required)
+   *     username: string (required),
+   *     email: string (required),
+   *     password: string (required),
+   *     role: string (GOON or HASHIRA, required)
    *   }
    * 
    * Response:
    * {
    *   success: true,
    *   message: string,
-   *   data: Object
+   *   data: {
+   *     user: Object,
+   *     credentials: { username, email, password }
+   *   }
    * }
    */
   async addMember(req, res, next) {
     try {
       const { id } = req.params;
-      const { userId } = req.body;
+      const { username, email, password, role } = req.body;
 
-      if (!userId) {
+      if (!username || !email || !password || !role) {
         return res.status(400).json({
           success: false,
-          message: 'User ID is required'
+          message: 'Username, email, password, and role are required'
         });
       }
 
-      const user = await TeamService.addMember(id, userId);
+      if (!['GOON', 'HASHIRA'].includes(role)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Role must be either GOON or HASHIRA'
+        });
+      }
 
-      res.json({
+      const result = await TeamService.addMember(id, { username, email, password, role });
+
+      res.status(201).json({
         success: true,
-        message: 'Member added successfully',
-        data: user
+        message: 'Member created and added to team successfully',
+        data: result
       });
     } catch (error) {
+      if (error.message.includes('already exists') || 
+          error.message.includes('capacity') ||
+          error.message.includes('invalid')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      }
       next(error);
     }
   }
