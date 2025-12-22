@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Select, SelectItem } from '@heroui/select';
@@ -48,6 +49,7 @@ interface UserProfileProps {
 const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [editMode, setEditMode] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
@@ -115,6 +117,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
     logout();
     onDeleteClose();
     onClose();
+    navigate('/login', { replace: true });
   };
 
   const timezones = [

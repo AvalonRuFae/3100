@@ -266,7 +266,7 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 										Total Earnings
 									</p>
 									<p className="text-2xl font-semibold text-gray-900 dark:text-white">
-										${user?.balance?.toFixed(2) || "0.00"}
+										${user?.balance ? Number(user.balance).toFixed(2) : "0.00"}
 									</p>
 								</div>
 							</div>

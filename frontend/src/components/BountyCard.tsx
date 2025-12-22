@@ -13,6 +13,7 @@ export interface Bounty {
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   createdBy: string;
   assignedTo?: string;
+  assignedAt?: string;
   tags: string[];
   estimatedHours?: number;
 }
@@ -83,7 +84,6 @@ const BountyCard: React.FC<BountyCardProps> = ({
 
   return (
     <Card 
-      isPressable
       className="w-full hover:scale-105 transition-transform duration-200 cursor-pointer"
       onClick={() => onClick?.(bounty)}
     >

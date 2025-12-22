@@ -13,6 +13,7 @@ import {
 import BountyCard, { Bounty } from "@/components/BountyCard";
 import { SearchIcon } from "@/components/icons";
 import SimpleThemeToggle from "@/components/SimpleThemeToggle";
+import axios from "axios";
 
 const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 	const [bounties, setBounties] = useState<Bounty[]>([]);
@@ -47,78 +48,58 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 	const [showConfirmReview, setShowConfirmReview] = useState(false);
 	const [showConfirmAvailable, setShowConfirmAvailable] = useState(false);
 
-	// Mock bounties data - replace with actual API call
+	// Fetch tasks from API
 	useEffect(() => {
-		const mockBounties: Bounty[] = [
-			{
-				id: "1",
-				title: "Fix Authentication Bug",
-				description:
-					"There is a critical bug in the login system that prevents users from accessing their accounts. Need to investigate and fix the JWT token validation.",
-				bountyAmount: 250.0,
-				deadline: "2025-12-10T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "HIGH",
-				createdBy: user?.username,
-				tags: ["Backend", "Authentication", "Critical"],
-				estimatedHours: 4,
-			},
-			{
-				id: "2",
-				title: "Implement Dark Mode",
-				description:
-					"Add dark mode support to the entire application. This includes updating all components to respect the theme preference.",
-				bountyAmount: 150.0,
-				deadline: "2025-12-15T23:59:59Z",
-				status: "IN_PROGRESS",
-				priority: "MEDIUM",
-				createdBy: user?.username,
-				tags: ["Frontend", "UI/UX", "Theme"],
-				estimatedHours: 8,
-			},
-			{
-				id: "3",
-				title: "Database Optimization",
-				description:
-					"Optimize database queries for better performance. Focus on the user and task tables that are experiencing slow response times.",
-				bountyAmount: 300.0,
-				deadline: "2025-12-20T23:59:59Z",
-				status: "REVIEW",
-				priority: "HIGH",
-				createdBy: user?.username,
-				tags: ["Database", "Performance", "SQL"],
-				estimatedHours: 12,
-			},
-			{
-				id: "4",
-				title: "Create User Profile Page",
-				description:
-					"Design and implement a comprehensive user profile page where users can view and edit their information.",
-				bountyAmount: 200.0,
-				deadline: "2025-12-25T23:59:59Z",
-				status: "COMPLETED",
-				priority: "MEDIUM",
-				createdBy: user?.username,
-				tags: ["Frontend", "Profile", "Forms"],
-				estimatedHours: 6,
-			},
-			{
-				id: "5",
-				title: "API Documentation",
-				description:
-					"Write comprehensive API documentation for all endpoints. Include examples and error handling scenarios.",
-				bountyAmount: 100.0,
-				deadline: "2025-12-30T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "LOW",
-				createdBy: user?.username,
-				tags: ["Documentation", "API", "Backend"],
-				estimatedHours: 10,
-			},
-		];
-		setBounties(mockBounties);
-		setFilteredBounties(mockBounties);
-	}, [user]);
+		const fetchTasks = async () => {
+			try {
+				const token = localStorage.getItem('token');
+				const response = await axios.get('http://localhost:3000/api/v1/tasks', {
+					headers: { Authorization: `Bearer ${token}` }
+				});
+				const apiTasks = response.data.data.map((task: any) => ({
+					id: task.id.toString(),
+					title: task.title,
+					description: task.description,
+					bountyAmount: Number(task.bountyAmount),
+					deadline: task.deadline,
+					status: task.status,
+					priority: task.priority,
+					createdBy: task.creator?.username || 'Unknown',
+					assignedTo: task.assignee?.username,
+					assignedAt: task.assignedAt,
+					tags: Array.isArray(task.tags) ? task.tags : [],
+					estimatedHours: 0
+				}));
+				setBounties(apiTasks);
+			} catch (error) {
+				console.error('Failed to fetch tasks:', error);
+				// Fallback to empty array on error
+				setBounties([]);
+			}
+		};
+		fetchTasks();
+	}, []);
+
+	// Keep old mock data as comment for reference
+	/*
+	const mockBounties: Bounty[] = [
+		{
+			id: "1",
+			title: "Fix Authentication Bug",
+			description: "There is a critical bug...",
+			bountyAmount: 250.0,
+			deadline: "2025-12-10T23:59:59Z",
+			status: "AVAILABLE",
+			priority: "HIGH",
+			createdBy: user?.username,
+			tags: ["Backend", "Authentication", "Critical"],
+			estimatedHours: 4,
+		},
+		// ... more mock items
+	];
+	setBounties(mockBounties);
+	setFilteredBounties(mockBounties);
+	*/
 
 	// Collect all unique tags from ALL bounties (not just filtered)
 	const allTags = React.useMemo(() => {
@@ -189,32 +170,80 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 		);
 	};
 
-	const handleSubmitCreateTask = () => {
-		const newTask: Bounty = {
-			id: (Math.random() * 100000).toFixed(0),
-			title: createTaskForm.title,
-			description: createTaskForm.description,
-			bountyAmount: parseFloat(createTaskForm.bountyAmount) || 0,
-			deadline: createTaskForm.deadline,
-			status: "AVAILABLE",
-			priority: createTaskForm.priority as "LOW" | "MEDIUM" | "HIGH",
-			createdBy: user?.username,
-			tags: createTaskForm.tags.split(",").map((t) => t.trim()).filter(Boolean),
-			estimatedHours: parseInt(createTaskForm.estimatedHours) || undefined,
-		};
-		setBounties((prev) => [newTask, ...prev]);
-		setShowCreateTask(false);
-		setCreateTaskForm({
-			title: "",
-			description: "",
-			bountyAmount: "",
-			deadline: "",
-			priority: "MEDIUM",
-			tags: "",
-			estimatedHours: "",
-		});
-		setSelectedTags([]);
-		setNewTagInput("");
+	const handleSubmitCreateTask = async () => {
+		try {
+			const token = localStorage.getItem('token');
+			
+			// Validate form data
+			if (!createTaskForm.title || createTaskForm.title.length < 3) {
+				alert('Title must be at least 3 characters');
+				return;
+			}
+			if (!createTaskForm.description || createTaskForm.description.length < 10) {
+				alert('Description must be at least 10 characters');
+				return;
+			}
+			if (!createTaskForm.deadline) {
+				alert('Deadline is required');
+				return;
+			}
+			
+			// Convert date input to ISO8601 format
+			const deadlineDate = new Date(createTaskForm.deadline);
+			if (deadlineDate <= new Date()) {
+				alert('Deadline must be in the future');
+				return;
+			}
+			
+			const taskData = {
+				title: createTaskForm.title,
+				description: createTaskForm.description,
+				bountyAmount: parseFloat(createTaskForm.bountyAmount) || 0,
+				deadline: deadlineDate.toISOString(),
+				priority: createTaskForm.priority,
+				tags: createTaskForm.tags.split(",").map((t) => t.trim()).filter(Boolean),
+			};
+			
+			await axios.post('http://localhost:3000/api/v1/tasks', taskData, {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			
+			// Refresh tasks after creation
+			const response = await axios.get('http://localhost:3000/api/v1/tasks', {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			const apiTasks = response.data.data.map((task: any) => ({
+				id: task.id.toString(),
+				title: task.title,
+				description: task.description,
+				bountyAmount: Number(task.bountyAmount),
+				deadline: task.deadline,
+				status: task.status,
+				priority: task.priority,
+				createdBy: task.creator?.username || 'Unknown',
+				assignedTo: task.assignee?.username,
+				tags: Array.isArray(task.tags) ? task.tags : [],
+				estimatedHours: 0
+			}));
+			setBounties(apiTasks);
+			
+			setShowCreateTask(false);
+			setCreateTaskForm({
+				title: "",
+				description: "",
+				bountyAmount: "",
+				deadline: "",
+				priority: "MEDIUM",
+				tags: "",
+				estimatedHours: "",
+			});
+			setSelectedTags([]);
+			setNewTagInput("");
+		} catch (error: any) {
+			console.error('Failed to create task:', error);
+			const errorMsg = error.response?.data?.message || 'Failed to create task. Please try again.';
+			alert(errorMsg);
+		}
 	};
 
 	// Update handleManageTaskStatus to support REVIEW and AVAILABLE
@@ -242,98 +271,146 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 		// ...should never reach here...
 	};
 
-	const confirmSetInProgress = () => {
+	const confirmSetInProgress = async () => {
 		if (pendingStatusTask && pendingStatusTask.status === "IN_PROGRESS") {
 			const bounty = pendingStatusTask.bounty;
-			setBounties((prev) =>
-				prev.map((b) =>
-					b.id === bounty.id
-						? { ...b, status: "IN_PROGRESS" }
-						: b
-				)
-			);
-			setManageTaskSelected((b) =>
-				b && b.id === bounty.id ? { ...b, status: "IN_PROGRESS" } : b
-			);
+			try {
+				const token = localStorage.getItem('token');
+				await axios.put(
+					`http://localhost:3000/api/v1/tasks/${bounty.id}/status`,
+					{ status: "IN_PROGRESS" },
+					{ headers: { Authorization: `Bearer ${token}` } }
+				);
+				setBounties((prev) =>
+					prev.map((b) =>
+						b.id === bounty.id
+							? { ...b, status: "IN_PROGRESS" }
+							: b
+					)
+				);
+				setManageTaskSelected((b) =>
+					b && b.id === bounty.id ? { ...b, status: "IN_PROGRESS" } : b
+				);
+			} catch (error) {
+				console.error('Failed to update status:', error);
+				alert('Failed to update task status. Please try again.');
+			}
 		}
 		setShowConfirmInProgress(false);
 		setPendingStatusTask(null);
 	};
 
-	const confirmSetCompleted = () => {
+	const confirmSetCompleted = async () => {
 		if (pendingStatusTask && pendingStatusTask.status === "COMPLETED") {
 			const bounty = pendingStatusTask.bounty;
-			setBounties((prev) =>
-				prev.map((b) =>
-					b.id === bounty.id
-						? { ...b, status: "COMPLETED" }
-						: b
-				)
-			);
-			setManageTaskSelected((b) =>
-				b && b.id === bounty.id ? { ...b, status: "COMPLETED" } : b
-			);
+			try {
+				const token = localStorage.getItem('token');
+				await axios.put(
+					`http://localhost:3000/api/v1/tasks/${bounty.id}/status`,
+					{ status: "COMPLETED" },
+					{ headers: { Authorization: `Bearer ${token}` } }
+				);
+				setBounties((prev) =>
+					prev.map((b) =>
+						b.id === bounty.id
+							? { ...b, status: "COMPLETED" }
+							: b
+					)
+				);
+				setManageTaskSelected((b) =>
+					b && b.id === bounty.id ? { ...b, status: "COMPLETED" } : b
+				);
+			} catch (error) {
+				console.error('Failed to update status:', error);
+				alert('Failed to update task status. Please try again.');
+			}
 		}
 		setShowConfirmComplete(false);
 		setPendingStatusTask(null);
 	};
 
-	const confirmSetReview = () => {
+	const confirmSetReview = async () => {
 		if (pendingStatusTask && pendingStatusTask.status === "REVIEW") {
 			const bounty = pendingStatusTask.bounty;
-			setBounties((prev) =>
-				prev.map((b) =>
-					b.id === bounty.id ? { ...b, status: "REVIEW" } : b
-				)
-			);
-			setManageTaskSelected((b) =>
-				b && b.id === bounty.id ? { ...b, status: "REVIEW" } : b
-			);
+			try {
+				const token = localStorage.getItem('token');
+				await axios.put(
+					`http://localhost:3000/api/v1/tasks/${bounty.id}/status`,
+					{ status: "REVIEW" },
+					{ headers: { Authorization: `Bearer ${token}` } }
+				);
+				setBounties((prev) =>
+					prev.map((b) =>
+						b.id === bounty.id ? { ...b, status: "REVIEW" } : b
+					)
+				);
+				setManageTaskSelected((b) =>
+					b && b.id === bounty.id ? { ...b, status: "REVIEW" } : b
+				);
+			} catch (error) {
+				console.error('Failed to update status:', error);
+				alert('Failed to update task status. Please try again.');
+			}
 		}
 		setShowConfirmReview(false);
 		setPendingStatusTask(null);
 	};
 
-	const confirmSetAvailable = () => {
+	const confirmSetAvailable = async () => {
 		if (pendingStatusTask && pendingStatusTask.status === "AVAILABLE") {
 			const bounty = pendingStatusTask.bounty;
-			setBounties((prev) =>
-				prev.map((b) =>
-					b.id === bounty.id ? { ...b, status: "AVAILABLE", assignedTo: undefined } : b
-				)
-			);
-			setManageTaskSelected((b) =>
-				b && b.id === bounty.id ? { ...b, status: "AVAILABLE", assignedTo: undefined } : b
-			);
+			try {
+				const token = localStorage.getItem('token');
+				// Use updateTask endpoint to clear assignedTo and set status simultaneously
+				await axios.put(
+					`http://localhost:3000/api/v1/tasks/${bounty.id}`,
+					{ status: "AVAILABLE", assignedTo: null },
+					{ headers: { Authorization: `Bearer ${token}` } }
+				);
+				setBounties((prev) =>
+					prev.map((b) =>
+						b.id === bounty.id ? { ...b, status: "AVAILABLE", assignedTo: undefined } : b
+					)
+				);
+				setManageTaskSelected((b) =>
+					b && b.id === bounty.id ? { ...b, status: "AVAILABLE", assignedTo: undefined } : b
+				);
+			} catch (error) {
+				console.error('Failed to update status:', error);
+				alert('Failed to update task status. Please try again.');
+			}
 		}
 		setShowConfirmAvailable(false);
 		setPendingStatusTask(null);
 	};
 
-	// Mock user search (replace with API call)
-	const mockUsers = [
-		{ id: 2, username: "tanjiro", email: "tanjiro@rikugan.com" },
-		{ id: 3, username: "zenitsu", email: "zenitsu@rikugan.com" },
-		{ id: 4, username: "inosuke", email: "inosuke@rikugan.com" },
-		{ id: 5, username: "shinobu", email: "shinobu@rikugan.com" },
-		{ id: 6, username: "rengoku", email: "rengoku@rikugan.com" },
-	];
-
-	const handleAssignSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+	// Fetch users from API for assignment
+	const handleAssignSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
 		setAssignSearch(value);
 		if (value.trim().length === 0) {
 			setAssignResults([]);
 			return;
 		}
-		const lower = value.toLowerCase();
-		setAssignResults(
-			mockUsers.filter(
-				(u) =>
-					u.username.toLowerCase().includes(lower) ||
-					u.email.toLowerCase().includes(lower)
-			)
-		);
+		try {
+			const token = localStorage.getItem('token');
+			const response = await axios.get(
+				'http://localhost:3000/api/v1/users',
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			const allUsers = response.data.data;
+			const lower = value.toLowerCase();
+			setAssignResults(
+				allUsers.filter(
+					(u: any) =>
+						u.username.toLowerCase().includes(lower) ||
+						u.email.toLowerCase().includes(lower)
+				)
+			);
+		} catch (error) {
+			console.error('Failed to fetch users:', error);
+			setAssignResults([]);
+		}
 	};
 
 	const handleAssignUser = () => {
@@ -342,20 +419,34 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 		}
 	};
 
-	const confirmAssignUser = () => {
+	const confirmAssignUser = async () => {
 		if (manageTaskSelected && assignSelectedUser) {
-			setBounties((prev) =>
-				prev.map((b) =>
-					b.id === manageTaskSelected.id
+			try {
+				const token = localStorage.getItem('token');
+				await axios.put(
+					`http://localhost:3000/api/v1/tasks/${manageTaskSelected.id}`,
+					{ 
+						assignedTo: assignSelectedUser.id,
+						status: "IN_PROGRESS"
+					},
+					{ headers: { Authorization: `Bearer ${token}` } }
+				);
+				setBounties((prev) =>
+					prev.map((b) =>
+						b.id === manageTaskSelected.id
+							? { ...b, assignedTo: assignSelectedUser.username, status: "IN_PROGRESS" }
+							: b
+					)
+				);
+				setManageTaskSelected((b) =>
+					b && b.id === manageTaskSelected.id
 						? { ...b, assignedTo: assignSelectedUser.username, status: "IN_PROGRESS" }
 						: b
-				)
-			);
-			setManageTaskSelected((b) =>
-				b && b.id === manageTaskSelected.id
-					? { ...b, assignedTo: assignSelectedUser.username, status: "IN_PROGRESS" }
-					: b
-			);
+				);
+			} catch (error) {
+				console.error('Failed to assign task:', error);
+				alert('Failed to assign task. Please try again.');
+			}
 		}
 		setShowAssignModal(false);
 		setShowConfirmAssign(false);
@@ -610,8 +701,24 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 												{new Date(manageTaskSelected.deadline).toLocaleDateString()}
 											</p>
 										</div>
+									</div>								{manageTaskSelected.assignedTo && (
+									<div className="grid grid-cols-2 gap-4">
+										<div>
+											<h4 className="font-semibold">Assigned To</h4>
+											<p className="text-gray-700 dark:text-gray-300">
+												{manageTaskSelected.assignedTo}
+											</p>
+										</div>
+										<div>
+											<h4 className="font-semibold">Assigned Date</h4>
+											<p className="text-gray-700 dark:text-gray-300">
+												{manageTaskSelected.assignedAt
+													? new Date(manageTaskSelected.assignedAt).toLocaleDateString()
+													: 'N/A'}
+											</p>
+										</div>
 									</div>
-									<div>
+								)}									<div>
 										<h4 className="font-semibold mb-2">Tags</h4>
 										<div className="flex flex-wrap gap-2">
 											{manageTaskSelected.tags.map((tag, index) => (
@@ -678,17 +785,19 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 								</div>
 							</ModalBody>
 							<ModalFooter>
-								<Button
-									size="sm"
-									color="danger"
-									variant="bordered"
-									onPress={() => {
-										setPendingDeleteTask(manageTaskSelected);
-										setShowConfirmDelete(true);
-									}}
-								>
-									Delete
-								</Button>
+								{manageTaskSelected.status === 'AVAILABLE' && (
+									<Button
+										size="sm"
+										color="danger"
+										variant="bordered"
+										onPress={() => {
+											setPendingDeleteTask(manageTaskSelected);
+											setShowConfirmDelete(true);
+										}}
+									>
+										Delete
+									</Button>
+								)}
 								<Button
 									size="sm"
 									variant="light"
@@ -874,10 +983,20 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 						</Button>
 						<Button
 							color="danger"
-							onPress={() => {
+							onPress={async () => {
 								if (pendingDeleteTask) {
-									setBounties((prev) => prev.filter((b) => b.id !== pendingDeleteTask.id));
-									setManageTaskSelected(null);
+									try {
+										const token = localStorage.getItem('token');
+										await axios.delete(
+											`http://localhost:3000/api/v1/tasks/${pendingDeleteTask.id}`,
+											{ headers: { Authorization: `Bearer ${token}` } }
+										);
+										setBounties((prev) => prev.filter((b) => b.id !== pendingDeleteTask.id));
+										setManageTaskSelected(null);
+									} catch (error) {
+										console.error('Failed to delete task:', error);
+										alert('Failed to delete task. Please try again.');
+									}
 								}
 								setShowConfirmDelete(false);
 								setPendingDeleteTask(null);

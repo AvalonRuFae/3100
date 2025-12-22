@@ -1,30 +1,34 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
-  role: 'GOON' | 'HASHIRA' | 'OYAKATASAMA';
+  role: string;
   balance: number;
+  teamId?: number;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  token: string | null;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<boolean>;
   register: (username: string, email: string, password: string, role: string) => Promise<boolean>;
   logout: () => void;
-  isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  token: null,
+  isLoading: false,
+  login: async () => false,
+  register: async () => false,
+  logout: () => {},
+});
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -32,84 +36,84 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Load user/token from localStorage on mount
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    if (storedToken && storedUser) {
+      setToken(storedToken);
+      setUser(JSON.parse(storedUser));
     }
-    setIsLoading(false);
   }, []);
 
-  const login = async (email: string, _password: string): Promise<boolean> => {
+  // Helper to set user/token in state and localStorage
+  const setAuth = (token: string, user: User) => {
+    setToken(token);
+    setUser(user);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+  };
+
+  const login = async (username: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call - replace with actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data - replace with actual API response
-      const mockUser: User = {
-        id: '1',
-        username: email.split('@')[0],
-        email,
-        role: 'GOON',
-        balance: 1500.50
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      return true;
-    } catch (error) {
-      console.error('Login failed:', error);
-      return false;
-    } finally {
+      // Backend expects 'username' field (can be username or email)
+      const res = await axios.post('http://localhost:3000/api/v1/auth/login', { username, password });
+      const { token, user } = res.data.data;
+      setAuth(token, user);
       setIsLoading(false);
+      return true;
+    } catch (err) {
+      setIsLoading(false);
+      return false;
     }
   };
 
-  const register = async (username: string, email: string, _password: string, role: string): Promise<boolean> => {
+  const register = async (username: string, email: string, password: string, role: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call - replace with actual API endpoint
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock registration - replace with actual API call
-      const mockUser: User = {
-        id: Date.now().toString(),
+      // For demo, use default teamName and licenseKey
+      const teamName = 'Demon Slayer Corps';
+      const licenseKey = 'DSCPMS-2024-UNLIMITED-ACCESS';
+      const res = await axios.post('http://localhost:3000/api/v1/auth/register', {
         username,
         email,
-        role: role as 'GOON' | 'HASHIRA' | 'OYAKATASAMA',
-        balance: 0
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      return true;
-    } catch (error) {
-      console.error('Registration failed:', error);
-      return false;
-    } finally {
+        password,
+        role,
+        teamName,
+        licenseKey,
+      });
+      const { token, user } = res.data.data;
+      setAuth(token, user);
       setIsLoading(false);
+      return true;
+    } catch (err) {
+      setIsLoading(false);
+      return false;
     }
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
 
-  const value = {
-    user,
-    login,
-    register,
-    logout,
-    isLoading
-  };
+  // Optionally, set axios default header for token
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
+    }
+  }, [token]);
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

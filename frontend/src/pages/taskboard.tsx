@@ -13,6 +13,7 @@ import {
 import BountyCard, { Bounty } from "@/components/BountyCard";
 import { SearchIcon } from "@/components/icons";
 import SimpleThemeToggle from "@/components/SimpleThemeToggle";
+import axios from "axios";
 
 const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 	const [bounties, setBounties] = useState<Bounty[]>([]);
@@ -41,94 +42,61 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 	const [showConfirmReview, setShowConfirmReview] = useState(false);
 	const [pendingReviewTask, setPendingReviewTask] = useState<Bounty | null>(null);
 
-	// Mock bounties data - replace with actual API call
+	// Fetch tasks from API
 	useEffect(() => {
-		const mockBounties: Bounty[] = [
-			{
-				id: "1",
-				title: "Fix Authentication Bug",
-				description:
-					"There is a critical bug in the login system that prevents users from accessing their accounts. Need to investigate and fix the JWT token validation.",
-				bountyAmount: 250.0,
-				deadline: "2025-12-10T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "HIGH",
-				createdBy: "Hashira_Master",
-				tags: ["Backend", "Authentication", "Critical"],
-				estimatedHours: 4,
-			},
-			{
-				id: "2",
-				title: "Implement Dark Mode",
-				description:
-					"Add dark mode support to the entire application. This includes updating all components to respect the theme preference.",
-				bountyAmount: 150.0,
-				deadline: "2025-12-15T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "MEDIUM",
-				createdBy: "UI_Hashira",
-				tags: ["Frontend", "UI/UX", "Theme"],
-				estimatedHours: 8,
-			},
-			{
-				id: "3",
-				title: "Database Optimization",
-				description:
-					"Optimize database queries for better performance. Focus on the user and task tables that are experiencing slow response times.",
-				bountyAmount: 300.0,
-				deadline: "2025-12-20T23:59:59Z",
-				status: "IN_PROGRESS",
-				priority: "HIGH",
-				createdBy: "DB_Hashira",
-				assignedTo: user?.username,
-				tags: ["Database", "Performance", "SQL"],
-				estimatedHours: 12,
-			},
-			{
-				id: "4",
-				title: "Create User Profile Page",
-				description:
-					"Design and implement a comprehensive user profile page where users can view and edit their information.",
-				bountyAmount: 200.0,
-				deadline: "2025-12-25T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "MEDIUM",
-				createdBy: "Frontend_Hashira",
-				tags: ["Frontend", "Profile", "Forms"],
-				estimatedHours: 6,
-			},
-			{
-				id: "5",
-				title: "API Documentation",
-				description:
-					"Write comprehensive API documentation for all endpoints. Include examples and error handling scenarios.",
-				bountyAmount: 100.0,
-				deadline: "2025-12-30T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "LOW",
-				createdBy: "API_Hashira",
-				tags: ["Documentation", "API", "Backend"],
-				estimatedHours: 10,
-			},
-			{
-				id: "6",
-				title: "Mobile Responsive Design",
-				description:
-					"Ensure all pages are fully responsive and work seamlessly on mobile devices.",
-				bountyAmount: 180.0,
-				deadline: "2025-12-12T23:59:59Z",
-				status: "REVIEW",
-				priority: "HIGH",
-				createdBy: "Mobile_Hashira",
-				assignedTo: "another_goon",
-				tags: ["Frontend", "Mobile", "CSS"],
-				estimatedHours: 5,
-			},
-		];
+		const fetchTasks = async () => {
+			try {
+				const token = localStorage.getItem('token');
+				const response = await axios.get('http://localhost:3000/api/v1/tasks', {
+					headers: { Authorization: `Bearer ${token}` }
+				});
+				const apiTasks = response.data.data.map((task: any) => ({
+					id: task.id.toString(),
+					title: task.title,
+					description: task.description,
+					bountyAmount: Number(task.bountyAmount),
+					deadline: task.deadline,
+					status: task.status,
+					priority: task.priority,
+					createdBy: task.creator?.username || 'Unknown',
+					assignedTo: task.assignee?.username,				assignedAt: task.assignedAt,					tags: Array.isArray(task.tags) ? task.tags : [],
+					estimatedHours: 0
+				}));
+				setBounties(apiTasks);
+			} catch (error) {
+				console.error('Failed to fetch tasks:', error);
+				// Fallback to empty array on error
+				setBounties([]);
+			}
+		};
+		fetchTasks();
 
-		setBounties(mockBounties);
-		setFilteredBounties(mockBounties);
-	}, [user]);
+		// Refetch tasks every 5 seconds to keep data in sync
+		const interval = setInterval(fetchTasks, 5000);
+
+		return () => clearInterval(interval);
+	}, []);
+
+	// Keep old mock data as comment for reference
+	/*
+	const mockBounties: Bounty[] = [
+		{
+			id: "1",
+			title: "Fix Authentication Bug",
+			description: "There is a critical bug...",
+			bountyAmount: 250.0,
+			deadline: "2025-12-10T23:59:59Z",
+			status: "AVAILABLE",
+			priority: "HIGH",
+			createdBy: "Hashira_Master",
+			tags: ["Backend", "Authentication", "Critical"],
+			estimatedHours: 4,
+		},
+		// ... more mock items
+	];
+	setBounties(mockBounties);
+	setFilteredBounties(mockBounties);
+	*/
 
 	// Collect all unique tags from ALL bounties (not just filtered)
 	const allTags = React.useMemo(() => {
@@ -196,18 +164,30 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 		onOpen();
 	};
 
-	const handleTakeTask = (bountyId: string) => {
-		setBounties((prevBounties) =>
-			prevBounties.map((bounty) =>
-				bounty.id === bountyId
-					? {
-							...bounty,
-							status: "IN_PROGRESS" as const,
-							assignedTo: user?.username,
-						}
-					: bounty
-			)
-		);
+	const handleTakeTask = async (bountyId: string) => {
+		try {
+			const token = localStorage.getItem('token');
+			const response = await axios.post(
+				`http://localhost:3000/api/v1/tasks/${bountyId}/assign`,
+				{},
+				{ headers: { Authorization: `Bearer ${token}` } }
+			);
+			const updatedTask = response.data.data;
+			setBounties((prevBounties) =>
+				prevBounties.map((bounty) =>
+					bounty.id === bountyId
+						? {
+								...bounty,
+								status: updatedTask.status,
+								assignedTo: user?.username,
+							}
+						: bounty
+				)
+			);
+		} catch (error) {
+			console.error('Failed to take task:', error);
+			alert('Failed to take task. Please try again.');
+		}
 	};
 
 	const handleRequestTakeTask = (bounty: Bounty) => {
@@ -248,18 +228,29 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 		);
 	};
 
-	const confirmSetReview = () => {
+	const confirmSetReview = async () => {
 		if (pendingReviewTask) {
-			setBounties((prev) =>
-				prev.map((b) =>
-					b.id === pendingReviewTask.id
-						? { ...b, status: "REVIEW" }
-						: b
-				)
-			);
-			setSelectedBounty((b) =>
-				b && b.id === pendingReviewTask.id ? { ...b, status: "REVIEW" } : b
-			);
+			try {
+				const token = localStorage.getItem('token');
+				await axios.put(
+					`http://localhost:3000/api/v1/tasks/${pendingReviewTask.id}/status`,
+					{ status: "REVIEW" },
+					{ headers: { Authorization: `Bearer ${token}` } }
+				);
+				setBounties((prev) =>
+					prev.map((b) =>
+						b.id === pendingReviewTask.id
+							? { ...b, status: "REVIEW" }
+							: b
+					)
+				);
+				setSelectedBounty((b) =>
+					b && b.id === pendingReviewTask.id ? { ...b, status: "REVIEW" } : b
+				);
+			} catch (error) {
+				console.error('Failed to update status:', error);
+				alert('Failed to update task status. Please try again.');
+			}
 		}
 		setShowConfirmReview(false);
 		setPendingReviewTask(null);
@@ -358,6 +349,7 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 										key={bounty.id}
 										bounty={bounty}
 										onClick={handleBountyClick}
+										isUserTask={true}
 										// Do NOT pass onTakeTask, disables take task button on card
 									/>
 								))}

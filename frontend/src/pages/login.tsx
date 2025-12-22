@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { EyeFilledIcon, EyeSlashFilledIcon } from '@/components/icons';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const [error, setError] = useState('');
@@ -20,7 +20,7 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
     
-    const success = await login(email, password);
+    const success = await login(username, password);
     if (success) {
       navigate('/dashboard');
     } else {
@@ -35,6 +35,12 @@ const LoginPage: React.FC = () => {
         <CardHeader className="flex flex-col gap-3 pb-6">
           <h1 className="text-2xl font-bold text-center">Demon Slayer Corps</h1>
           <p className="text-center text-gray-600">Sign in to your account</p>
+          <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+            <p className="font-semibold mb-1">Test Credentials:</p>
+            <p>Admin: <span className="font-mono">oyakatasama / Admin123!</span></p>
+            <p>Hashira: <span className="font-mono">rengoku / Hashira123!</span></p>
+            <p>Goon: <span className="font-mono">tanjiro / Goon123!</span></p>
+          </div>
         </CardHeader>
         <CardBody>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -45,11 +51,11 @@ const LoginPage: React.FC = () => {
             )}
             
             <Input
-              type="email"
-              label="Email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              label="Username"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
               variant="bordered"
             />

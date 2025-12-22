@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Divider } from "@heroui/divider";
@@ -32,12 +33,14 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
 	const { user, logout } = useAuth();
 	const { theme, toggleTheme } = useTheme();
+	const navigate = useNavigate();
 	const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
 
 	const handleLogout = () => {
 		logout();
 		onClose();
+		navigate('/login', { replace: true });
 	};
 
 	return (
@@ -102,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 					<div className="bg-gradient-to-r from-purple-500 to-blue-600 rounded-lg p-4 text-white mb-6">
 						<p className="text-sm opacity-90">Current Balance</p>
 						<p className="text-2xl font-bold">
-							${user?.balance?.toFixed(2) || "0.00"}
+							${user?.balance ? Number(user.balance).toFixed(2) : "0.00"}
 						</p>
 					</div>
 
