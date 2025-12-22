@@ -3,6 +3,19 @@ const app = require('../src/server');
 const { sequelize } = require('../src/database/connection');
 const { User, Task, License, Team } = require('../src/models');
 
+/**
+ * Task API Tests
+ * 
+ * Test Documentation References:
+ * - TC-TASK-001: Hashira Can Create Tasks (Section 4.2)
+ * - TC-TASK-002: GOON Cannot Create Tasks (Section 4.2)
+ * - TC-TASK-003: Task Status Update by Assigned User (Section 4.2)
+ * - TC-TASK-004: Task Deletion by Creator (Section 4.2)
+ * - TC-TASK-005: Prevent Deletion of Assigned Tasks (Section 4.2)
+ * 
+ * See TESTING_DOCUMENTATION.pdf Section 4.2 for detailed test cases
+ */
+
 describe('Task API', () => {
   let goonToken, hashiraToken, adminToken;
   let hashiraId;
@@ -87,9 +100,12 @@ describe('Task API', () => {
 
   describe('POST /api/v1/tasks', () => {
     /**
+     * Test Case: TC-TASK-001
+     * Reference: TESTING_DOCUMENTATION Section 4.2
      * Test: Create Task (Hashira)
      * Purpose: Verify that users with role HASHIRA (and OYAKATASAMA) can create tasks
      * and that required fields are validated.
+     * Priority: High | Category: Functional Testing + Authorization
      */
     it('should allow Hashira to create task', async () => {
       const res = await request(app)

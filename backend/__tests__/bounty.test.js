@@ -3,6 +3,16 @@ const app = require('../src/server');
 const { sequelize } = require('../src/database/connection');
 const { User, Task, Transaction, License, Team } = require('../src/models');
 
+/**
+ * Bounty System Tests
+ * 
+ * Test Documentation References:
+ * - TC-BOUNTY-001: Bounty Statistics Aggregation (Section 4.4)
+ * - TC-BOUNTY-002: User Transaction History Retrieval (Section 4.4)
+ * 
+ * See TESTING_DOCUMENTATION.pdf Section 4.4 for detailed test cases
+ */
+
 describe('Bounty endpoints (integration)', () => {
   let adminToken, userToken, adminUser, normalUser, testTask, license;
 

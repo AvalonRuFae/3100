@@ -4,6 +4,15 @@ const { sequelize } = require('../src/database/connection');
 const { User, Team, License } = require('../src/models');
 const TeamService = require('../src/services/TeamService');
 
+/**
+ * Team Management Tests
+ * 
+ * Test Documentation References:
+ * - TC-TEAM-001: Team Creation with Valid License (Section 4.5)
+ * 
+ * See TESTING_DOCUMENTATION.pdf Section 4.5 for detailed test cases
+ */
+
 describe('Team API and Service', () => {
   let adminToken, hashiraToken, goonToken;
   let adminUser, hashiraUser, goonUser;

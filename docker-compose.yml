@@ -45,7 +45,7 @@ services:
       database:
         condition: service_healthy
     restart: always
-    command: bash -c "npm install && NODE_ENV=test npm test -- auth.test.js && NODE_ENV=test npm test -- bounty.test.js && NODE_ENV=test npm test -- database.test.js && NODE_ENV=test npm test -- license.test.js && NODE_ENV=test npm test -- notifications.test.js && NODE_ENV=test npm test -- tasks.test.js && NODE_ENV=test npm test -- team.test.js && NODE_ENV=test npm test -- user.test.js && npm run dev"
+    command: bash -c "npm install && npm run dev"
 
   # Frontend
   frontend:

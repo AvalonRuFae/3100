@@ -4,6 +4,16 @@ const { sequelize } = require('../src/database/connection');
 const { User, Task, Notification } = require('../src/models');
 const NotificationService = require('../src/services/NotificationService');
 
+/**
+ * Notification System Tests
+ * 
+ * Test Documentation References:
+ * - TC-NOTIF-001: Task Assignment Notification Creation (Section 4.7)
+ * - TC-NOTIF-002: Mark Notification as Read (Section 4.7)
+ * 
+ * See TESTING_DOCUMENTATION.pdf Section 4.7 for detailed test cases
+ */
+
 describe('Notification Service', () => {
   let testUser1, testUser2, testTask;
   let user1Token, user2Token;
