@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@heroui/input';
 import { Button } from '@heroui/button';
 import { Select, SelectItem } from '@heroui/select';
@@ -46,44 +47,18 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, changePassword } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [editMode, setEditMode] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   
-  // Editable user data
+  // Editable user data - only real fields from backend
   const [formData, setFormData] = useState({
     username: user?.username || '',
     email: user?.email || '',
-    firstName: 'John',
-    lastName: 'Doe',
-    phone: '+1 (555) 123-4567',
-    bio: 'Passionate developer with 3+ years of experience in React and Node.js. Love solving complex problems and learning new technologies.',
-    location: 'San Francisco, CA',
-    website: 'https://johndoe.dev',
-    company: 'Tech Innovations Inc.',
-    jobTitle: 'Full Stack Developer',
-    timezone: 'America/Los_Angeles',
-    language: 'English',
-    notifications: {
-      email: true,
-      push: true,
-      taskReminders: true,
-      bountyAlerts: true,
-      weeklyReports: false
-    },
-    privacy: {
-      profileVisible: true,
-      emailVisible: false,
-      phoneVisible: false,
-      statsVisible: true
-    },
-    preferences: {
-      autoAssignTasks: false,
-      receiveNewsletters: true,
-      twoFactorAuth: false
-    }
+    bio: '',
+    profilePicture: ''
   });
 
   const [securityData, setSecurityData] = useState({
@@ -91,6 +66,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
     newPassword: '',
     confirmPassword: ''
   });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   const handleSave = () => {
     // In a real app, this would make an API call to update the user
@@ -99,22 +76,29 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
     // Show success message
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    setPasswordSuccess('');
+    
     if (securityData.newPassword !== securityData.confirmPassword) {
-      alert('Passwords do not match');
+      setPasswordError('Passwords do not match');
       return;
     }
-    // In a real app, this would make an API call to change password
-    console.log('Changing password');
-    setSecurityData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-  };
-
-  const handleDeleteAccount = () => {
-    // In a real app, this would make an API call to delete the account
-    console.log('Deleting account');
-    logout();
-    onDeleteClose();
-    onClose();
+    
+    if (securityData.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      return;
+    }
+    
+    const result = await changePassword(securityData.currentPassword, securityData.newPassword);
+    
+    if (result.success) {
+      setPasswordSuccess('Password changed successfully!');
+      setSecurityData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => setPasswordSuccess(''), 3000);
+    } else {
+      setPasswordError(result.message || 'Failed to change password');
+    }
   };
 
   const timezones = [
@@ -138,10 +122,23 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
   ];
 
   if (!isOpen) return null;
+  
+  // Safety check
+  if (!user) {
+    console.error('UserProfile: No user data available');
+    return null;
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+    <div 
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Static Header */}
         <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6 text-white rounded-t-lg flex-shrink-0">
           <div className="flex justify-between items-start">
@@ -152,9 +149,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
                 className="border-2 border-white"
               />
               <div>
-                <h2 className="text-2xl font-bold">{formData.firstName} {formData.lastName}</h2>
-                <p className="opacity-90">@{formData.username}</p>
-                <p className="text-sm opacity-80">{formData.jobTitle} at {formData.company}</p>
+                <h2 className="text-2xl font-bold">{formData.username}</h2>
+                <p className="opacity-90">{formData.email}</p>
+                <p className="text-sm opacity-80">{user?.role}</p>
               </div>
             </div>
             <div className="flex space-x-2">
@@ -202,25 +199,11 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
                 <CardBody className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
-                      label="First Name"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                      isReadOnly={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
-                    />
-                    <Input
-                      label="Last Name"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                      isReadOnly={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
-                    />
-                    <Input
                       label="Username"
                       value={formData.username}
-                      onChange={(e) => setFormData({...formData, username: e.target.value})}
-                      isReadOnly={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
+                      isReadOnly
+                      variant="flat"
+                      description="Username cannot be changed"
                     />
                     <Input
                       label="Email"
@@ -231,173 +214,63 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
                       variant={editMode ? "bordered" : "flat"}
                     />
                     <Input
-                      label="Phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      isReadOnly={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
+                      label="Role"
+                      value={user?.role || ''}
+                      isReadOnly
+                      variant="flat"
+                      description="Role is assigned by administrator"
                     />
-                    <Input
-                      label="Location"
-                      value={formData.location}
-                      onChange={(e) => setFormData({...formData, location: e.target.value})}
-                      isReadOnly={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
-                    />
-                  </div>
-                  <Input
-                    label="Bio"
-                    value={formData.bio}
-                    onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                    isReadOnly={!editMode}
-                    variant={editMode ? "bordered" : "flat"}
-                    description="Tell us about yourself and your experience"
-                  />
-                </CardBody>
-              </Card>
-
-              {/* Professional Information */}
-              <Card>
-                <CardHeader>
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <WalletIcon className="text-primary" />
-                    Professional Information
-                  </h3>
-                </CardHeader>
-                <CardBody className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="Company"
-                      value={formData.company}
-                      onChange={(e) => setFormData({...formData, company: e.target.value})}
-                      isReadOnly={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
-                    />
-                    <Input
-                      label="Job Title"
-                      value={formData.jobTitle}
-                      onChange={(e) => setFormData({...formData, jobTitle: e.target.value})}
-                      isReadOnly={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
-                    />
-                    <Input
-                      label="Website"
-                      value={formData.website}
-                      onChange={(e) => setFormData({...formData, website: e.target.value})}
-                      isReadOnly={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
-                    />
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 p-3 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg">
                       <span className="text-2xl">💰</span>
                       <div>
-                        <p className="font-semibold">Current Balance</p>
-                        <p className="text-2xl font-bold text-success">${user?.balance?.toFixed(2) || '0.00'}</p>
+                        <p className="text-sm font-semibold text-gray-600 dark:text-gray-400">Current Balance</p>
+                        <p className="text-2xl font-bold text-success">${user?.balance ? Number(user.balance).toFixed(2) : '0.00'}</p>
                       </div>
                     </div>
                   </div>
+
+                  {/* Bio */}
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Bio</label>
+                    <textarea
+                      value={formData.bio}
+                      onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                      disabled={!editMode}
+                      placeholder="Tell us about yourself..."
+                      className={`
+                        w-full p-3 rounded-lg min-h-[100px] resize-none
+                        ${editMode 
+                          ? 'border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800' 
+                          : 'bg-gray-100 dark:bg-gray-800 border-0'
+                        }
+                        text-gray-900 dark:text-gray-100
+                      `}
+                    />
+                  </div>
                 </CardBody>
               </Card>
 
-              {/* Preferences & Settings */}
+              {/* Account Statistics */}
               <Card>
                 <CardHeader>
-                  <h3 className="text-lg font-semibold">Preferences & Settings</h3>
+                  <h3 className="text-lg font-semibold">Account Information</h3>
                 </CardHeader>
-                <CardBody className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select
-                      label="Timezone"
-                      selectedKeys={[formData.timezone]}
-                      onSelectionChange={(keys) => setFormData({...formData, timezone: Array.from(keys)[0] as string})}
-                      isDisabled={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
-                    >
-                      {timezones.map((tz) => (
-                        <SelectItem key={tz.key}>
-                          {tz.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                    <Select
-                      label="Language"
-                      selectedKeys={[formData.language]}
-                      onSelectionChange={(keys) => setFormData({...formData, language: Array.from(keys)[0] as string})}
-                      isDisabled={!editMode}
-                      variant={editMode ? "bordered" : "flat"}
-                    >
-                      {languages.map((lang) => (
-                        <SelectItem key={lang.key}>
-                          {lang.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
+                <CardBody className="space-y-3">
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-gray-600 dark:text-gray-400">User ID</span>
+                    <span className="font-semibold">#{user?.id}</span>
                   </div>
-
                   <Divider />
-
-                  {/* Notification Settings */}
-                  <div>
-                    <h4 className="font-semibold mb-3">Notification Settings</h4>
-                    <div className="space-y-3">
-                      <Switch
-                        isSelected={formData.notifications.email}
-                        onValueChange={(checked) => setFormData({...formData, notifications: {...formData.notifications, email: checked}})}
-                        isDisabled={!editMode}
-                      >
-                        Email Notifications
-                      </Switch>
-                      <Switch
-                        isSelected={formData.notifications.push}
-                        onValueChange={(checked) => setFormData({...formData, notifications: {...formData.notifications, push: checked}})}
-                        isDisabled={!editMode}
-                      >
-                        Push Notifications
-                      </Switch>
-                      <Switch
-                        isSelected={formData.notifications.taskReminders}
-                        onValueChange={(checked) => setFormData({...formData, notifications: {...formData.notifications, taskReminders: checked}})}
-                        isDisabled={!editMode}
-                      >
-                        Task Deadline Reminders
-                      </Switch>
-                      <Switch
-                        isSelected={formData.notifications.bountyAlerts}
-                        onValueChange={(checked) => setFormData({...formData, notifications: {...formData.notifications, bountyAlerts: checked}})}
-                        isDisabled={!editMode}
-                      >
-                        New Bounty Alerts
-                      </Switch>
-                    </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-gray-600 dark:text-gray-400">Team ID</span>
+                    <span className="font-semibold">{user?.teamId ? `#${user.teamId}` : 'No team assigned'}</span>
                   </div>
-
                   <Divider />
-
-                  {/* Privacy Settings */}
-                  <div>
-                    <h4 className="font-semibold mb-3">Privacy Settings</h4>
-                    <div className="space-y-3">
-                      <Switch
-                        isSelected={formData.privacy.profileVisible}
-                        onValueChange={(checked) => setFormData({...formData, privacy: {...formData.privacy, profileVisible: checked}})}
-                        isDisabled={!editMode}
-                      >
-                        Make Profile Public
-                      </Switch>
-                      <Switch
-                        isSelected={formData.privacy.emailVisible}
-                        onValueChange={(checked) => setFormData({...formData, privacy: {...formData.privacy, emailVisible: checked}})}
-                        isDisabled={!editMode}
-                      >
-                        Show Email Publicly
-                      </Switch>
-                      <Switch
-                        isSelected={formData.privacy.statsVisible}
-                        onValueChange={(checked) => setFormData({...formData, privacy: {...formData.privacy, statsVisible: checked}})}
-                        isDisabled={!editMode}
-                      >
-                        Show Performance Stats
-                      </Switch>
-                    </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-gray-600 dark:text-gray-400">Account Status</span>
+                    <span className="px-3 py-1 bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200 rounded-full text-sm font-medium">
+                      Active
+                    </span>
                   </div>
                 </CardBody>
               </Card>
@@ -408,19 +281,22 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
                   <h3 className="text-lg font-semibold">Security</h3>
                 </CardHeader>
                 <CardBody className="space-y-4">
-                  <div className="space-y-3">
-                    <Switch
-                      isSelected={formData.preferences.twoFactorAuth}
-                      onValueChange={(checked) => setFormData({...formData, preferences: {...formData.preferences, twoFactorAuth: checked}})}
-                      isDisabled={!editMode}
-                    >
-                      Two-Factor Authentication
-                    </Switch>
-                  </div>
-
                   {editMode && (
-                    <div className="space-y-4 pt-4 border-t">
+                    <div className="space-y-4">
                       <h4 className="font-semibold">Change Password</h4>
+                      
+                      {passwordError && (
+                        <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                          {passwordError}
+                        </div>
+                      )}
+                      
+                      {passwordSuccess && (
+                        <div className="p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                          {passwordSuccess}
+                        </div>
+                      )}
+                      
                       <div className="grid grid-cols-1 gap-4">
                         <Input
                           label="Current Password"
@@ -468,43 +344,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ isOpen, onClose }) => {
 
               {/* Action Buttons */}
               {editMode && (
-                <div className="flex justify-between">
-                  <Button color="danger" variant="light" onClick={onDeleteOpen}>
-                    Delete Account
+                <div className="flex justify-end space-x-3">
+                  <Button variant="light" onClick={() => setEditMode(false)}>
+                    Cancel
                   </Button>
-                  <div className="flex space-x-3">
-                    <Button variant="light" onClick={() => setEditMode(false)}>
-                      Cancel
-                    </Button>
-                    <Button color="primary" onClick={handleSave}>
-                      Save Changes
-                    </Button>
-                  </div>
+                  <Button color="primary" onClick={handleSave}>
+                    Save Changes
+                  </Button>
                 </div>
               )}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Delete Confirmation Modal */}
-      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose}>
-        <ModalContent>
-          <ModalHeader>Delete Account</ModalHeader>
-          <ModalBody>
-            <p>Are you sure you want to delete your account? This action cannot be undone.</p>
-            <p className="text-danger">All your tasks, progress, and earnings will be permanently lost.</p>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="light" onPress={onDeleteClose}>
-              Cancel
-            </Button>
-            <Button color="danger" onPress={handleDeleteAccount}>
-              Delete Account
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </div>
   );
 };

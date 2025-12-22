@@ -322,18 +322,6 @@ ErrorView --> Client : Error Response
 !theme plain
 title Rikugan - Class Diagram
 
-class Team {
-  -id: number
-  -name: string
-  -description: string
-  -createdAt: Date
-  -updatedAt: Date
-  +hasValidLicense(): boolean
-  +canAddMember(): boolean
-  +getMemberCount(): number
-  +isLicenseExpired(): boolean
-}
-
 class User {
   -id: number
   -teamId: number
@@ -351,7 +339,6 @@ class User {
   +canCreateTask(): boolean
   +canAssignTask(): boolean
   +hasValidTeamLicense(): boolean
-  +getTeam(): Team
 }
 
 enum UserRole {
@@ -461,26 +448,18 @@ class ProjectBoard {
   +getTasksByStatus(status: TaskStatus): Task[]
 }
 
-' Team relationships
-Team ||--|| License : has
-Team ||--o{ User : contains
-Team ||--o{ Task : owns
-Team ||--o{ ProjectBoard : manages
-
 ' User relationships
 User ||--o{ Task : creates
 User ||--o{ Task : assigned_to
 User ||--o{ Bounty : receives
 User ||--o{ Notification : receives
-User }o--|| Team : belongs_to
 
 ' Task relationships
 Task ||--|| Bounty : has
 Task }o--|| ProjectBoard : belongs_to
-Task }o--|| Team : belongs_to
 
 ' License relationship
-License ||--|| Team : controls_access_for
+' License is associated with teams via teamId field
 
 User }o--|| UserRole : has
 Task }o--|| TaskStatus : has
@@ -918,16 +897,6 @@ end note
 !theme plain
 title Rikugan Domain Model
 
-class Team {
-  -id: number
-  -name: string
-  -description: string
-  +hasValidLicense(): boolean
-  +canAddMember(): boolean
-  +getMemberCount(): number
-  +isLicenseExpired(): boolean
-}
-
 class User {
   -id: number
   -teamId: number
@@ -940,7 +909,6 @@ class User {
   +hasValidLicense(): boolean
   +hasValidTeamLicense(): boolean
   +calculateTotalEarnings(): number
-  +getTeam(): Team
 }
 
 class Task {
@@ -988,22 +956,17 @@ class Notification {
   -readStatus: boolean
 }
 
-' Team relationships
-Team ||--|| License : has
-Team ||--o{ User : contains
-Team ||--o{ Task : owns
-
 ' User relationships
 User ||--o{ Task : creates
 User ||--o{ Task : assigned_to
 User ||--o{ Bounty : receives
 User ||--o{ Notification : receives
-User }o--|| Team : belongs_to
 
 ' Task and other relationships
 Task ||--|| Bounty : has
-Task }o--|| Team : belongs_to
-License ||--|| Team : controls_access_for
+
+' Note: Teams are represented via teamId fields in User, Task, and License models
+' No separate Team entity is needed in the implementation
 
 @enduml
 ```

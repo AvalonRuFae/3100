@@ -1,0 +1,548 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{enumitem}
+
+% Code listing settings
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{orange},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    tabsize=2,
+    showstringspaces=false
+}
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Rikugan Testing Documentation}
+\fancyhead[R]{Version 1.0}
+\fancyfoot[C]{\thepage}
+
+% Title formatting
+\titleformat{\section}{\Large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection}{1em}{}
+
+\begin{document}
+
+% Title Page
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+    
+    {\Huge\bfseries Testing Documentation\\[0.5cm]}
+    {\LARGE Rikugan Project Management System\\[1.5cm]}
+    
+    \begin{tabular}{ll}
+        \textbf{Document Version:} & 1.0 \\
+        \textbf{Printing Date:} & \today \\[0.5cm]
+        \textbf{Group ID:} & Group 9 \\[0.5cm]
+    \end{tabular}
+    
+    \vspace{1cm}
+    
+    \begin{flushleft}
+    \textbf{Group Members:}\\[0.3cm]
+    \begin{tabular}{ll}
+        1155211784 & Fok Chun Yin \\
+        1155211541 & HO Sum Ming \\
+        1155211779 & Chi Ho KWOK \\
+        1155211479 & NG Ka Long \\
+        1155214295 & SIN Lok Man \\
+    \end{tabular}
+    \end{flushleft}
+    
+    \vspace{1.5cm}
+    
+    \begin{flushleft}
+    \textbf{Revision History:}\\[0.3cm]
+    \begin{tabular}{|l|l|l|p{6cm}|}
+    \hline
+    \textbf{Version} & \textbf{Date} & \textbf{Author} & \textbf{Description} \\
+    \hline
+    1.0 & December 22, 2025 & Group 9 & Initial release \\
+    \hline
+    \end{tabular}
+    \end{flushleft}
+    
+    \vfill
+\end{titlepage}
+
+% Table of Contents
+\tableofcontents
+\newpage
+
+\section{Test Plan Overview}
+
+This document outlines the testing strategy for DSCPMS, covering backend API testing (Jest + Supertest) and frontend user requirement validation. The test suite ensures system reliability, security, and compliance with SRS functional requirements.
+
+\subsection{Testing Scope}
+\begin{itemize}
+    \item RESTful API endpoints and authentication
+    \item Database operations and transaction integrity
+    \item Role-based access control (RBAC)
+    \item License validation and team management
+    \item Bounty system and business logic
+\end{itemize}
+
+\newpage
+\section{Testing Strategy}
+
+\subsection{Backend Testing}
+
+\subsubsection{Unit Testing}
+\begin{itemize}
+    \item \textbf{Framework:} Jest
+    \item \textbf{Scope:} Individual components, services, utilities, and models in isolation
+    \item \textbf{Approach:} Mock external dependencies, test business logic, validate data transformations
+    \item \textbf{Coverage:} Service layer functions, utility functions, model methods
+\end{itemize}
+
+\subsubsection{Integration Testing}
+\begin{itemize}
+    \item \textbf{Framework:} Jest + Supertest
+    \item \textbf{Scope:} API endpoints, database operations, component interactions
+    \item \textbf{Approach:} Test complete request-response cycles, validate database transactions, verify middleware chains
+    \item \textbf{Coverage:} RESTful API endpoints, authentication flows, database integrity, inter-service communication
+\end{itemize}
+
+\subsection{Frontend Testing}
+
+\subsubsection{Validation Testing}
+\begin{itemize}
+    \item \textbf{Approach:} Manual testing and user acceptance testing (UAT)
+    \item \textbf{Scope:} User interface workflows, form validations, SRS requirement compliance
+    \item \textbf{Coverage:} User requirement validation, end-to-end scenarios, role-based feature access
+    \item \textbf{Focus:} Input validation, error messages, user feedback, navigation flows
+\end{itemize}
+
+\subsection{Overall Metrics}
+\begin{itemize}
+    \item \textbf{Coverage Target:} 70\%+ for critical paths (currently 86\%)
+    \item \textbf{Test Types:} Functional, security, negative testing, and data integrity validation
+\end{itemize}
+
+\newpage
+\section{Test Coverage Summary}
+
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Component} & \textbf{Tests} & \textbf{Coverage} \\
+\hline
+Authentication (auth.test.js) & 41 & >90\% \\
+Task Management (tasks.test.js) & 24 & >85\% \\
+License System (license.test.js) & 47 & >90\% \\
+User Management (user.test.js) & 43 & >70\% \\
+Bounty System (bounty.test.js) & 14 & >90\% \\
+Notifications (notifications.test.js) & 10 & >90\% \\
+Team Management (team.test.js) & 20 & \textasciitilde{}71\% \\
+Database (database.test.js) & 49 & \textasciitilde{}100\% \\
+\hline
+\textbf{Total} & \textbf{248} & \textbf{\textasciitilde{}86\%} \\
+\hline
+\end{tabular}
+
+\newpage
+\section{Core Test Cases}
+
+\textbf{Note:} Complete test suite (248 tests) available in \texttt{backend/\_\_tests\_\_/} directory.
+
+\subsection{Authentication (auth.test.js)}
+
+\subsubsection{TEST-AUTH-001: User Registration}
+\begin{itemize}[label={}]
+    \item \textbf{Endpoint:} \texttt{POST /api/v1/auth/register}
+    \item \textbf{Validates:} New users register with team\_id=NULL, password hashing, role assignment
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const res = await request(app)
+  .post('/api/v1/auth/register')
+  .send({
+    username: 'testuser',
+    email: 'test@example.com',
+    password: 'Test123!',
+    role: 'GOON'
+  });
+
+expect(res.statusCode).toBe(201);
+expect(res.body.success).toBe(true);
+\end{lstlisting}
+
+\subsubsection{TEST-AUTH-002: Login with No Team Flag}
+\begin{itemize}[label={}]
+    \item \textbf{Endpoint:} \texttt{POST /api/v1/auth/login}
+    \item \textbf{Validates:} JWT token generation, no\_team flag when teamId is null
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const res = await request(app)
+  .post('/api/v1/auth/login')
+  .send({
+    username: 'logintest',
+    password: 'Test123!'
+  });
+
+expect(res.statusCode).toBe(200);
+expect(res.body.data.no_team).toBe(true);
+\end{lstlisting}
+
+\subsubsection{TEST-AUTH-003: Expired License Rejection}
+\begin{itemize}[label={}]
+    \item \textbf{Endpoint:} \texttt{POST /api/v1/auth/login}
+    \item \textbf{Validates:} Login blocked for expired team licenses (HTTP 403)
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const res = await request(app)
+  .post('/api/v1/auth/login')
+  .send({
+    username: 'expireduser',
+    password: 'Test123!'
+  });
+
+expect(res.statusCode).toBe(403);
+expect(res.body.message).toMatch(/license|expired/i);
+\end{lstlisting}
+
+\subsection{Task Management (tasks.test.js)}
+
+\subsubsection{TEST-TASK-001: Task Creation by HASHIRA}
+\begin{itemize}[label={}]
+    \item \textbf{Endpoint:} \texttt{POST /api/v1/tasks}
+    \item \textbf{Validates:} HASHIRA/OYAKATASAMA can create tasks with bounty
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const res = await request(app)
+  .post('/api/v1/tasks')
+  .set('Authorization', `Bearer ${hashiraToken}`)
+  .send({
+    title: 'Test Task',
+    description: 'Task description',
+    bountyAmount: 100.00,
+    priority: 'HIGH'
+  });
+
+expect(res.statusCode).toBe(201);
+expect(res.body.success).toBe(true);
+\end{lstlisting}
+
+\subsubsection{TEST-TASK-002: GOON Role Restriction}
+\begin{itemize}[label={}]
+    \item \textbf{Endpoint:} \texttt{POST /api/v1/tasks}
+    \item \textbf{Validates:} GOON role cannot create tasks (HTTP 403)
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const res = await request(app)
+  .post('/api/v1/tasks')
+  .set('Authorization', `Bearer ${goonToken}`)
+  .send({
+    title: 'Test Task',
+    description: 'Task description'
+  });
+
+expect(res.statusCode).toBe(403);
+\end{lstlisting}
+
+\subsubsection{TEST-TASK-003: Task Assignment}
+\begin{itemize}[label={}]
+    \item \textbf{Endpoint:} \texttt{POST /api/v1/tasks/:id/assign}
+    \item \textbf{Validates:} Task assignment, status update, notification creation
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const res = await request(app)
+  .post(`/api/v1/tasks/${taskId}/assign`)
+  .set('Authorization', `Bearer ${goonToken}`);
+
+expect(res.statusCode).toBe(200);
+expect(res.body.data.status).toBe('IN_PROGRESS');
+\end{lstlisting}
+
+\subsection{License System (license.test.js)}
+
+\subsubsection{TEST-LICENSE-001: Valid License Validation}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Environment-configured license keys accepted
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const result = await LicenseService.validateForTeamCreation(
+  'RIKUGAN-2025-VALID-KEY-A'
+);
+
+expect(result.valid).toBe(true);
+expect(result.config.max_users).toBe(50);
+\end{lstlisting}
+
+\subsubsection{TEST-LICENSE-002: Invalid License Rejection}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Unknown license keys rejected
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const result = await LicenseService.validateForTeamCreation(
+  'INVALID-KEY-12345'
+);
+
+expect(result.valid).toBe(false);
+expect(result.error).toMatch(/invalid|not found/i);
+\end{lstlisting}
+
+\subsubsection{TEST-LICENSE-003: Expiration Enforcement}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Expired licenses blocked (HTTP 403)
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const result = await LicenseService.validateForTeamCreation(
+  'RIKUGAN-TEST-2025-EXPIRED'
+);
+
+expect(result.valid).toBe(false);
+expect(result.error).toMatch(/expired/i);
+\end{lstlisting}
+
+\subsubsection{TEST-LICENSE-004: User Limit Enforcement}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Teams cannot exceed max\_users limit
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const res = await request(app)
+  .post(`/api/v1/teams/${teamId}/members`)
+  .set('Authorization', `Bearer ${adminToken}`)
+  .send({ userId: newUserId });
+
+expect(res.statusCode).toBe(403);
+expect(res.body.message).toMatch(/user limit/i);
+\end{lstlisting}
+
+\subsubsection{TEST-LICENSE-005: Task Limit (Unlicensed)}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} 3-task limit for teams without valid license
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const res = await request(app)
+  .post('/api/v1/tasks')
+  .set('Authorization', `Bearer ${hashiraToken}`)
+  .send({ title: 'Task 4', description: 'Fourth task' });
+
+expect(res.statusCode).toBe(403);
+expect(res.body.message).toMatch(/task limit/i);
+\end{lstlisting}
+
+\subsection{Bounty System (bounty.test.js)}
+
+\subsubsection{TEST-BOUNTY-001: Automatic Reward Distribution}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Bounty awarded on task completion, balance update
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+await request(app)
+  .put(`/api/v1/tasks/${taskId}/status`)
+  .set('Authorization', `Bearer ${goonToken}`)
+  .send({ status: 'COMPLETED' });
+
+const transaction = await Transaction.findOne({ 
+  where: { taskId, type: 'BOUNTY' } 
+});
+
+expect(transaction).toBeDefined();
+expect(transaction.amount).toBe(bountyAmount);
+\end{lstlisting}
+
+\subsubsection{TEST-BOUNTY-002: Penalty Application}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Penalties for missed deadlines, negative transactions
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const penalty = await Transaction.findOne({ 
+  where: { taskId, type: 'PENALTY' } 
+});
+
+expect(penalty).toBeDefined();
+expect(penalty.amount).toBeLessThan(0);
+expect(user.balance).toBeLessThan(initialBalance);
+\end{lstlisting}
+
+\subsection{Team Management (team.test.js)}
+
+\subsubsection{TEST-TEAM-001: Team Creation}
+\begin{itemize}[label={}]
+    \item \textbf{Endpoint:} \texttt{POST /api/v1/teams/create}
+    \item \textbf{Validates:} Team created with license, creator as OYAKATASAMA
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const response = await request(app)
+  .post('/api/v1/teams/create')
+  .set('Authorization', `Bearer ${adminToken}`)
+  .send({
+    teamName: 'Alpha Team',
+    licenseKey: 'RIKUGAN-2025-TEAM-A'
+  });
+
+expect(response.status).toBe(200);
+expect(response.body.success).toBe(true);
+\end{lstlisting}
+
+\subsubsection{TEST-TEAM-002: Resource Isolation}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Users can only access their team's resources
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const res = await request(app)
+  .get('/api/v1/tasks')
+  .set('Authorization', `Bearer ${team1Token}`);
+
+const tasks = res.body.data;
+expect(tasks.every(t => t.teamId === team1Id)).toBe(true);
+\end{lstlisting}
+
+\subsection{Notifications (notifications.test.js)}
+
+\subsubsection{TEST-NOTIF-001: Multi-Type Creation}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} All notification types (TASK\_ASSIGNED, BOUNTY\_RECEIVED, etc.)
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const taskNotif = await NotificationService.createNotification(
+  testUser1.id, 'TASK_ASSIGNED',
+  { taskTitle: 'New Task', assignerName: 'Manager', 
+    bountyAmount: 100, taskId: testTask.id }
+);
+
+expect(taskNotif.type).toBe('TASK_ASSIGNED');
+expect(taskNotif.title).toBe('New Task Assigned');
+expect(taskNotif.readStatus).toBe(false);
+\end{lstlisting}
+
+\subsubsection{TEST-NOTIF-002: User Isolation}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Users only see their own notifications
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+const notifs = await NotificationService.getUserNotifications(
+  testUser1.id, { unreadOnly: true }
+);
+
+expect(Array.isArray(notifs)).toBe(true);
+expect(notifs.every(n => !n.readStatus)).toBe(true);
+\end{lstlisting}
+
+\subsection{Database (database.test.js)}
+
+\subsubsection{TEST-DB-001: Connection Health}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} MySQL connection established
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+await sequelize.authenticate();
+
+expect(sequelize).toBeDefined();
+expect(sequelize.options.database).toBe('dscpms_test');
+\end{lstlisting}
+
+\subsubsection{TEST-DB-002: Transaction Rollback}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Failed transactions rollback completely
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+try {
+  await sequelize.transaction(async (t) => {
+    await User.create({ username: 'test' }, { transaction: t });
+    throw new Error('Rollback test');
+  });
+} catch (err) {
+  const user = await User.findOne({ where: { username: 'test' } });
+  expect(user).toBeNull();
+}
+\end{lstlisting}
+
+\subsubsection{TEST-DB-003: Model Validations}
+\begin{itemize}[label={}]
+    \item \textbf{Validates:} Email format, required fields, enum values
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+try {
+  await User.create({ username: 'test', email: 'invalid' });
+} catch (err) {
+  expect(err.name).toBe('SequelizeValidationError');
+}
+\end{lstlisting}
+
+\newpage
+\section{Testing Environment}
+
+\subsection{Docker Setup}
+All tests run inside Docker containers for database connectivity and environment consistency.
+
+\textbf{Start environment:}
+\begin{lstlisting}[language=bash]
+docker-compose up -d database backend
+docker exec dscpms-database mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS dscpms_test;"
+\end{lstlisting}
+
+\textbf{Run tests:}
+\begin{lstlisting}[language=bash]
+# All tests
+docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- --forceExit"
+
+# Individual suite
+docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- auth.test.js --forceExit"
+
+# With coverage
+docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- --coverage --forceExit"
+\end{lstlisting}
+
+\textbf{Test Database:} dscpms\_test (MySQL, host: database, port: 3306, user: root)
+
+\newpage
+\section{Test Results}
+
+\subsection{Statistics}
+\begin{itemize}
+    \item \textbf{Total:} 248 tests (100\% passing)
+    \item \textbf{Coverage:} \textasciitilde{}86\% overall
+    \item \textbf{Execution Time:} 8-18 seconds
+\end{itemize}
+
+\subsection{Quality Gates}
+\begin{itemize}
+    \item[$\checkmark$] All tests pass
+    \item[$\checkmark$] No coverage decrease
+    \item[$\checkmark$] No new ESLint errors
+    \item[$\checkmark$] API documentation updated
+\end{itemize}
+
+\section{Conclusion}
+
+The Rikugan test suite provides 86\% coverage across 248 tests, validating authentication, authorization, license management, bounty system, and database integrity. All major SRS requirements are tested with comprehensive security and business logic validation.
+
+\end{document}
