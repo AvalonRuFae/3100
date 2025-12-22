@@ -253,33 +253,33 @@ class UserService {
     }
   }
 
-  async getLeaderboard(limit = 10) {
-    try {
-      const users = await User.findAll({
-        where: { isActive: true },
-        attributes: [
-          'id', 
-          'username', 
-          'role', 
-          'balance',
-          'profilePicture'
-        ],
-        order: [['balance', 'DESC']],
-        limit
-      });
+  // async getLeaderboard(limit = 10) {
+  //   try {
+  //     const users = await User.findAll({
+  //       where: { isActive: true },
+  //       attributes: [
+  //         'id', 
+  //         'username', 
+  //         'role', 
+  //         'balance',
+  //         'profilePicture'
+  //       ],
+  //       order: [['balance', 'DESC']],
+  //       limit
+  //     });
 
-      // Add rank
-      const leaderboard = users.map((user, index) => ({
-        rank: index + 1,
-        ...user.toJSON()
-      }));
+  //     // Add rank
+  //     const leaderboard = users.map((user, index) => ({
+  //       rank: index + 1,
+  //       ...user.toJSON()
+  //     }));
 
-      return leaderboard;
-    } catch (error) {
-      logger.error('Get leaderboard error:', error);
-      throw error;
-    }
-  }
+  //     return leaderboard;
+  //   } catch (error) {
+  //     logger.error('Get leaderboard error:', error);
+  //     throw error;
+  //   }
+  // }
 }
 
 module.exports = new UserService();
