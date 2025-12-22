@@ -20,6 +20,14 @@ const DashboardPage: React.FC = () => {
 	const [sidebarOpen, setSidebarOpen] = useState(false);
 
 	const [currentItemId, setCurrentItemId] = useState("dashboard");
+	const [dashboardKey, setDashboardKey] = useState(0);
+
+	// Force dashboard to remount when switching back to it
+	useEffect(() => {
+		if (currentItemId === 'dashboard') {
+			setDashboardKey(prev => prev + 1);
+		}
+	}, [currentItemId]);
 
 	const menuItems = [
 		{ id: "dashboard", label: "Dashboard", icon: DashboardIcon },
@@ -46,7 +54,7 @@ const DashboardPage: React.FC = () => {
 	];
 
 	const componentMap: Record<string, React.ReactNode> = {
-		dashboard: <Dashboard user={user} />,
+		dashboard: <Dashboard user={user} key={dashboardKey} />,
 		taskboard: <Taskboard user={user} />,
 		...((user?.role === "OYAKATASAMA" || user?.role === "HASHIRA") && {
 			task_management: <TaskManagement user={user} />,

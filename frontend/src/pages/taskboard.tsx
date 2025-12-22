@@ -148,7 +148,11 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 	// Sort priorities: HIGH > MEDIUM > LOW
 	const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 	const myTasks = filteredBounties
-		.filter((b) => b.assignedTo === user?.username)
+		.filter((b) => 
+			b.assignedTo === user?.username && 
+			b.status !== "COMPLETED" && 
+			b.status !== "CANCELLED"
+		)
 		.sort((a, b) => {
 			const dateA = new Date(a.deadline).getTime();
 			const dateB = new Date(b.deadline).getTime();

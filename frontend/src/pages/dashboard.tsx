@@ -1,171 +1,115 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
-import { Select, SelectItem } from "@heroui/select";
-import {
-	Modal,
-	ModalContent,
-	ModalHeader,
-	ModalBody,
-	ModalFooter,
-	useDisclosure,
-} from "@heroui/modal";
-import BountyCard, { Bounty } from "@/components/BountyCard";
-import { SearchIcon } from "@/components/icons";
 import SimpleThemeToggle from "@/components/SimpleThemeToggle";
+import axios from "axios";
 
 const Dashboard: React.FC<{ user: any }> = ({ user }) => {
-	const [bounties, setBounties] = useState<Bounty[]>([]);
-	const [filteredBounties, setFilteredBounties] = useState<Bounty[]>([]);
-	const [selectedBounty, setSelectedBounty] = useState<Bounty | null>(null);
-	const [searchTerm, setSearchTerm] = useState("");
-	const [statusFilter, setStatusFilter] = useState("ALL");
-	const [priorityFilter, setPriorityFilter] = useState("ALL");
-	const { isOpen, onOpen, onClose } = useDisclosure();
+	// Dashboard data states
+	const [taskHistory, setTaskHistory] = useState<any[]>([]);
+	const [transactions, setTransactions] = useState<any[]>([]);
+	const [taskStats, setTaskStats] = useState<any>(null);
+	const [availableTasksCount, setAvailableTasksCount] = useState(0);
+	const [activeTasksCount, setActiveTasksCount] = useState(0);
+	const [completionRate, setCompletionRate] = useState(0);
+	const [loading, setLoading] = useState(true);
 
-	// Mock bounties data - replace with actual API call
+	// Fetch dashboard data
 	useEffect(() => {
-		const mockBounties: Bounty[] = [
-			{
-				id: "1",
-				title: "Fix Authentication Bug",
-				description:
-					"There is a critical bug in the login system that prevents users from accessing their accounts. Need to investigate and fix the JWT token validation.",
-				bountyAmount: 250.0,
-				deadline: "2025-12-10T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "HIGH",
-				createdBy: "Hashira_Master",
-				tags: ["Backend", "Authentication", "Critical"],
-				estimatedHours: 4,
-			},
-			{
-				id: "2",
-				title: "Implement Dark Mode",
-				description:
-					"Add dark mode support to the entire application. This includes updating all components to respect the theme preference.",
-				bountyAmount: 150.0,
-				deadline: "2025-12-15T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "MEDIUM",
-				createdBy: "UI_Hashira",
-				tags: ["Frontend", "UI/UX", "Theme"],
-				estimatedHours: 8,
-			},
-			{
-				id: "3",
-				title: "Database Optimization",
-				description:
-					"Optimize database queries for better performance. Focus on the user and task tables that are experiencing slow response times.",
-				bountyAmount: 300.0,
-				deadline: "2025-12-20T23:59:59Z",
-				status: "IN_PROGRESS",
-				priority: "HIGH",
-				createdBy: "DB_Hashira",
-				assignedTo: user?.username,
-				tags: ["Database", "Performance", "SQL"],
-				estimatedHours: 12,
-			},
-			{
-				id: "4",
-				title: "Create User Profile Page",
-				description:
-					"Design and implement a comprehensive user profile page where users can view and edit their information.",
-				bountyAmount: 200.0,
-				deadline: "2025-12-25T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "MEDIUM",
-				createdBy: "Frontend_Hashira",
-				tags: ["Frontend", "Profile", "Forms"],
-				estimatedHours: 6,
-			},
-			{
-				id: "5",
-				title: "API Documentation",
-				description:
-					"Write comprehensive API documentation for all endpoints. Include examples and error handling scenarios.",
-				bountyAmount: 100.0,
-				deadline: "2025-12-30T23:59:59Z",
-				status: "AVAILABLE",
-				priority: "LOW",
-				createdBy: "API_Hashira",
-				tags: ["Documentation", "API", "Backend"],
-				estimatedHours: 10,
-			},
-			{
-				id: "6",
-				title: "Mobile Responsive Design",
-				description:
-					"Ensure all pages are fully responsive and work seamlessly on mobile devices.",
-				bountyAmount: 180.0,
-				deadline: "2025-12-12T23:59:59Z",
-				status: "REVIEW",
-				priority: "HIGH",
-				createdBy: "Mobile_Hashira",
-				assignedTo: "another_goon",
-				tags: ["Frontend", "Mobile", "CSS"],
-				estimatedHours: 5,
-			},
-		];
+		const fetchDashboardData = async () => {
+			try {
+				setLoading(true);
+				const token = localStorage.getItem('token');
+				const config = { headers: { Authorization: `Bearer ${token}` } };
 
-		setBounties(mockBounties);
-		setFilteredBounties(mockBounties);
-	}, [user]);
+				// Fetch task history
+				const tasksResponse = await axios.get(`http://localhost:3000/api/v1/users/${user.id}/tasks`, config);
+				const tasks = tasksResponse.data.data || [];
+				setTaskHistory(tasks);
 
-	// Filter bounties based on search and filters
+				// Calculate completion rate from user's tasks
+				const completed = tasks.filter((t: any) => t.status === 'COMPLETED').length;
+				const total = tasks.length;
+				setCompletionRate(total > 0 ? Math.round((completed / total) * 100) : 0);
+
+				// Count active tasks (assigned to user and not completed)
+				const active = tasks.filter((t: any) => 
+					t.status === 'IN_PROGRESS' || t.status === 'REVIEW'
+				).length;
+				setActiveTasksCount(active);
+
+				// Fetch available tasks
+				const availableResponse = await axios.get('http://localhost:3000/api/v1/tasks?status=AVAILABLE', config);
+				setAvailableTasksCount(availableResponse.data.data?.length || 0);
+
+				// Fetch transactions
+				const transactionsResponse = await axios.get(`http://localhost:3000/api/v1/bounty/transactions/${user.id}`, config);
+				setTransactions(transactionsResponse.data.data || []);
+
+				// Fetch task statistics (for OYAKATASAMA)
+				if (user.role === 'OYAKATASAMA') {
+					const statsResponse = await axios.get('http://localhost:3000/api/v1/tasks/statistics', config);
+					setTaskStats(statsResponse.data);
+				}
+
+				setLoading(false);
+			} catch (error) {
+				console.error('Error fetching dashboard data:', error);
+				setLoading(false);
+			}
+		};
+
+		fetchDashboardData();
+	}, [user.id, user.role]);
+
+	// Refetch data when page becomes visible (user navigates back to dashboard)
 	useEffect(() => {
-		let filtered = bounties;
+		const handleVisibilityChange = () => {
+			if (!document.hidden) {
+				const fetchDashboardData = async () => {
+					try {
+						const token = localStorage.getItem('token');
+						const config = { headers: { Authorization: `Bearer ${token}` } };
 
-		if (searchTerm) {
-			filtered = filtered.filter(
-				(bounty) =>
-					bounty.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					bounty.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-					bounty.tags.some((tag) =>
-						tag.toLowerCase().includes(searchTerm.toLowerCase())
-					)
-			);
-		}
+						// Fetch task historys
+						const tasksResponse = await axios.get(`http://localhost:3000/api/v1/users/${user.id}/tasks`, config);
+						const tasks = tasksResponse.data.data || [];
+						setTaskHistory(tasks);
 
-		if (statusFilter !== "ALL") {
-			filtered = filtered.filter((bounty) => bounty.status === statusFilter);
-		}
+						// Calculate completion rate from user's tasks
+						const completed = tasks.filter((t: any) => t.status === 'COMPLETED').length;
+						const total = tasks.length;
+						setCompletionRate(total > 0 ? Math.round((completed / total) * 100) : 0);
 
-		if (priorityFilter !== "ALL") {
-			filtered = filtered.filter(
-				(bounty) => bounty.priority === priorityFilter
-			);
-		}
+						// Count active tasks (assigned to user and not completed)
+						const active = tasks.filter((t: any) => 
+							t.status === 'IN_PROGRESS' || t.status === 'REVIEW'
+						).length;
+						setActiveTasksCount(active);
 
-		setFilteredBounties(filtered);
-	}, [searchTerm, statusFilter, priorityFilter, bounties]);
+						// Fetch available tasks
+						const availableResponse = await axios.get('http://localhost:3000/api/v1/tasks?status=AVAILABLE', config);
+						setAvailableTasksCount(availableResponse.data.data?.length || 0);
 
-	const handleBountyClick = (bounty: Bounty) => {
-		setSelectedBounty(bounty);
-		onOpen();
-	};
+						// Fetch transactions
+						const transactionsResponse = await axios.get(`http://localhost:3000/api/v1/bounty/transactions/${user.id}`, config);
+						setTransactions(transactionsResponse.data.data || []);
 
-	const handleTakeTask = (bountyId: string) => {
-		// Simulate taking a task - replace with actual API call
-		setBounties((prevBounties) =>
-			prevBounties.map((bounty) =>
-				bounty.id === bountyId
-					? {
-							...bounty,
-							status: "IN_PROGRESS" as const,
-							assignedTo: user?.username,
+						// Fetch task statistics (for OYAKATASAMA)
+						if (user.role === 'OYAKATASAMA') {
+							const statsResponse = await axios.get('http://localhost:3000/api/v1/tasks/statistics', config);
+							setTaskStats(statsResponse.data);
 						}
-					: bounty
-			)
-		);
-	};
+					} catch (error) {
+						console.error('Error fetching dashboard data:', error);
+					}
+				};
 
-	const availableBounties = filteredBounties.filter(
-		(b) => b.status === "AVAILABLE" || b.assignedTo !== user?.username
-	);
-	const myTasks = filteredBounties.filter(
-		(b) => b.assignedTo === user?.username
-	);
+				fetchDashboardData();
+			}
+		};
+
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+		return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+	}, [user.id, user.role]);
 
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex w-full">
@@ -213,7 +157,7 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 										Available Tasks
 									</p>
 									<p className="text-2xl font-semibold text-gray-900 dark:text-white">
-										{availableBounties.length}
+										{loading ? '...' : availableTasksCount}
 									</p>
 								</div>
 							</div>
@@ -239,7 +183,7 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 										My Active Tasks
 									</p>
 									<p className="text-2xl font-semibold text-gray-900 dark:text-white">
-										{myTasks.length}
+										{loading ? '...' : activeTasksCount}
 									</p>
 								</div>
 							</div>
@@ -294,170 +238,140 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 										Completion Rate
 									</p>
 									<p className="text-2xl font-semibold text-gray-900 dark:text-white">
-										87%
+										{loading ? '...' : `${completionRate}%`}
 									</p>
 								</div>
 							</div>
 						</div>
 					</div>
 
-					{/* Filters */}
-					<div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
-						<div className="flex flex-col lg:flex-row gap-4">
-							<Input
-								placeholder="Search bounties..."
-								value={searchTerm}
-								onChange={(e) => setSearchTerm(e.target.value)}
-								startContent={<SearchIcon />}
-								className="flex-1"
-							/>
-							<Select
-								placeholder="Filter by Status"
-								selectedKeys={statusFilter === "ALL" ? [] : [statusFilter]}
-								onSelectionChange={(keys) =>
-									setStatusFilter((Array.from(keys)[0] as string) || "ALL")
-								}
-								className="w-full lg:w-48"
-							>
-								<SelectItem key="ALL">All Statuses</SelectItem>
-								<SelectItem key="AVAILABLE">Available</SelectItem>
-								<SelectItem key="IN_PROGRESS">In Progress</SelectItem>
-								<SelectItem key="REVIEW">In Review</SelectItem>
-								<SelectItem key="COMPLETED">Completed</SelectItem>
-							</Select>
-							<Select
-								placeholder="Filter by Priority"
-								selectedKeys={priorityFilter === "ALL" ? [] : [priorityFilter]}
-								onSelectionChange={(keys) =>
-									setPriorityFilter((Array.from(keys)[0] as string) || "ALL")
-								}
-								className="w-full lg:w-48"
-							>
-								<SelectItem key="ALL">All Priorities</SelectItem>
-								<SelectItem key="HIGH">High</SelectItem>
-								<SelectItem key="MEDIUM">Medium</SelectItem>
-								<SelectItem key="LOW">Low</SelectItem>
-							</Select>
-						</div>
-					</div>
-
-					{/* My Tasks Section */}
-					{myTasks.length > 0 && (
-						<div className="mb-8">
-							<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-								My Active Tasks
-							</h2>
-							<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-								{myTasks.map((bounty) => (
-									<BountyCard
-										key={bounty.id}
-										bounty={bounty}
-										onClick={handleBountyClick}
-										isUserTask={true}
-									/>
-								))}
-							</div>
-						</div>
-					)}
-
-					{/* Available Bounties */}
-					<div>
+					{/* Task History Widget - All Users */}
+					<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
 						<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-							Available Bounties
+							Task History
 						</h2>
-						{filteredBounties.length === 0 ? (
-							<div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow text-center">
-								<p className="text-gray-500 dark:text-gray-400">
-									No bounties found matching your criteria.
-								</p>
+						{loading ? (
+							<p className="text-gray-600 dark:text-gray-400">Loading...</p>
+						) : taskHistory.length > 0 ? (
+							<div className="overflow-x-auto overflow-y-auto max-h-64">
+								<table className="w-full text-sm">
+									<thead>
+										<tr className="border-b dark:border-gray-700">
+											<th className="text-left py-2 px-2 font-medium text-gray-600 dark:text-gray-400">Task</th>
+											<th className="text-left py-2 px-2 font-medium text-gray-600 dark:text-gray-400">Status</th>
+											<th className="text-left py-2 px-2 font-medium text-gray-600 dark:text-gray-400">Bounty</th>
+											<th className="text-left py-2 px-2 font-medium text-gray-600 dark:text-gray-400">Deadline</th>
+										</tr>
+									</thead>
+									<tbody>
+										{taskHistory.slice(0, 5).map((task) => (
+											<tr key={task.id} className="border-b dark:border-gray-700">
+												<td className="py-2 px-2 text-gray-900 dark:text-white">{task.title}</td>
+												<td className="py-2 px-2">
+													<span className={`px-2 py-1 rounded-full text-xs ${
+														task.status === 'COMPLETED' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+														task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+														'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+													}`}>
+														{task.status}
+													</span>
+												</td>
+												<td className="py-2 px-2 text-gray-900 dark:text-white">${task.bountyAmount}</td>
+												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">
+													{new Date(task.deadline).toLocaleDateString()}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
 							</div>
 						) : (
-							<div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-								{availableBounties.map((bounty) => (
-									<BountyCard
-										key={bounty.id}
-										bounty={bounty}
-										onClick={handleBountyClick}
-										onTakeTask={handleTakeTask}
-									/>
-								))}
-							</div>
+							<p className="text-gray-600 dark:text-gray-400">No task history available.</p>
 						)}
 					</div>
-				</div>
-			</div>
 
-			{/* Bounty Detail Modal */}
-			<Modal size="2xl" isOpen={isOpen} onClose={onClose}>
-				<ModalContent>
-					{selectedBounty && (
-						<>
-							<ModalHeader className="flex flex-col gap-1">
-								<h2 className="text-xl font-bold">{selectedBounty.title}</h2>
-								<p className="text-sm text-gray-600">
-									Created by {selectedBounty.createdBy}
-								</p>
-							</ModalHeader>
-							<ModalBody>
-								<div className="space-y-4">
-									<div>
-										<h3 className="font-semibold mb-2">Description</h3>
-										<p className="text-gray-700 dark:text-gray-300">
-											{selectedBounty.description}
+					{/* Transaction History Widget - All Users */}
+					<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+						<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+							Transaction History
+						</h2>
+						{loading ? (
+							<p className="text-gray-600 dark:text-gray-400">Loading...</p>
+						) : transactions.length > 0 ? (
+							<div className="overflow-x-auto overflow-y-auto max-h-64">
+								<table className="w-full text-sm">
+									<thead>
+										<tr className="border-b dark:border-gray-700">
+											<th className="text-left py-2 px-2 font-medium text-gray-600 dark:text-gray-400">Type</th>
+											<th className="text-left py-2 px-2 font-medium text-gray-600 dark:text-gray-400">Amount</th>
+											<th className="text-left py-2 px-2 font-medium text-gray-600 dark:text-gray-400">Description</th>
+											<th className="text-left py-2 px-2 font-medium text-gray-600 dark:text-gray-400">Date</th>
+										</tr>
+									</thead>
+									<tbody>
+										{transactions.slice(0, 5).map((txn) => (
+											<tr key={txn.id} className="border-b dark:border-gray-700">
+												<td className="py-2 px-2">
+													<span className={`px-2 py-1 rounded-full text-xs ${
+														txn.type === 'CREDIT' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+														'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+													}`}>
+														{txn.type}
+													</span>
+												</td>
+												<td className="py-2 px-2 text-gray-900 dark:text-white">
+													{txn.type === 'CREDIT' ? '+' : '-'}${Math.abs(txn.amount)}
+												</td>
+												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">{txn.description}</td>
+												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">
+													{new Date(txn.createdAt).toLocaleDateString()}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						) : (
+							<p className="text-gray-600 dark:text-gray-400">No transactions available.</p>
+						)}
+					</div>
+
+					{/* System Performance Widget - OYAKATASAMA Only */}
+					{user.role === 'OYAKATASAMA' && (
+						<div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+							<h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+								System Performance
+							</h2>
+							{loading ? (
+								<p className="text-gray-600 dark:text-gray-400">Loading...</p>
+							) : taskStats ? (
+								<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+									<div className="text-center">
+										<p className="text-3xl font-bold text-gray-900 dark:text-white">
+											{taskStats.totalTasks || 0}
 										</p>
+										<p className="text-sm text-gray-600 dark:text-gray-400">Total Tasks</p>
 									</div>
-
-									<div className="grid grid-cols-2 gap-4">
-										<div>
-											<h4 className="font-semibold">Bounty Amount</h4>
-											<p className="text-2xl font-bold text-success">
-												${selectedBounty.bountyAmount.toFixed(2)}
-											</p>
-										</div>
-										<div>
-											<h4 className="font-semibold">Deadline</h4>
-											<p>
-												{new Date(selectedBounty.deadline).toLocaleDateString()}
-											</p>
-										</div>
+									<div className="text-center">
+										<p className="text-3xl font-bold text-green-600 dark:text-green-400">
+											{taskStats.completedTasks || 0}
+										</p>
+										<p className="text-sm text-gray-600 dark:text-gray-400">Completed</p>
 									</div>
-
-									<div>
-										<h4 className="font-semibold mb-2">Tags</h4>
-										<div className="flex flex-wrap gap-2">
-											{selectedBounty.tags.map((tag, index) => (
-												<span
-													key={index}
-													className="px-2 py-1 bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 rounded text-sm"
-												>
-													{tag}
-												</span>
-											))}
-										</div>
+									<div className="text-center">
+										<p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+											{taskStats.activeTasks || 0}
+										</p>
+										<p className="text-sm text-gray-600 dark:text-gray-400">Active</p>
 									</div>
 								</div>
-							</ModalBody>
-							<ModalFooter>
-								<Button variant="light" onPress={onClose}>
-									Close
-								</Button>
-								{selectedBounty.status === "AVAILABLE" &&
-									selectedBounty.assignedTo !== user?.username && (
-										<Button
-											color="primary"
-											onPress={() => {
-												handleTakeTask(selectedBounty.id);
-												onClose();
-											}}
-										>
-											Take This Task
-										</Button>
-									)}
-							</ModalFooter>
-						</>
+							) : (
+								<p className="text-gray-600 dark:text-gray-400">No statistics available.</p>
+							)}
+						</div>
 					)}
-				</ModalContent>
-			</Modal>
+				</div>
+			</div>
 		</div>
 	);
 };

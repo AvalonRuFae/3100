@@ -248,6 +248,11 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 
 	// Update handleManageTaskStatus to support REVIEW and AVAILABLE
 	const handleManageTaskStatus = (bounty: Bounty, status: "IN_PROGRESS" | "COMPLETED" | "REVIEW" | "AVAILABLE") => {
+		// Prevent changing status of already completed tasks
+		if (bounty.status === "COMPLETED") {
+			alert("Cannot change status of completed tasks.");
+			return;
+		}
 		if (status === "COMPLETED") {
 			setPendingStatusTask({ bounty, status: "COMPLETED" });
 			setShowConfirmComplete(true);
@@ -766,7 +771,7 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 														size="sm"
 														variant={manageTaskSelected.status === "IN_PROGRESS" ? "solid" : "bordered"}
 														onPress={() => handleManageTaskStatus(manageTaskSelected, "IN_PROGRESS")}
-														disabled={manageTaskSelected.status === "IN_PROGRESS"}
+														disabled={manageTaskSelected.status === "IN_PROGRESS" || manageTaskSelected.status === "COMPLETED"}
 													>
 														In Progress
 													</Button>
