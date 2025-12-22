@@ -41,7 +41,7 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 				setAvailableTasksCount(availableResponse.data.data?.length || 0);
 
 				// Fetch transactions
-				const transactionsResponse = await axios.get(`http://localhost:3000/api/v1/bounty/transactions/${user.id}`, config);
+				const transactionsResponse = await axios.get(`http://localhost:3000/api/v1/bounties/transactions/${user.id}`, config);
 				setTransactions(transactionsResponse.data.data || []);
 
 				// Fetch task statistics (for OYAKATASAMA)
@@ -90,7 +90,7 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 						setAvailableTasksCount(availableResponse.data.data?.length || 0);
 
 						// Fetch transactions
-						const transactionsResponse = await axios.get(`http://localhost:3000/api/v1/bounty/transactions/${user.id}`, config);
+						const transactionsResponse = await axios.get(`http://localhost:3000/api/v1/bounties/transactions/${user.id}`, config);
 						setTransactions(transactionsResponse.data.data || []);
 
 						// Fetch task statistics (for OYAKATASAMA)
@@ -313,14 +313,15 @@ const Dashboard: React.FC<{ user: any }> = ({ user }) => {
 											<tr key={txn.id} className="border-b dark:border-gray-700">
 												<td className="py-2 px-2">
 													<span className={`px-2 py-1 rounded-full text-xs ${
-														txn.type === 'CREDIT' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
-														'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+														txn.type === 'BOUNTY' || txn.type === 'ADJUSTMENT' && txn.amount > 0 
+															? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
+															: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
 													}`}>
 														{txn.type}
 													</span>
 												</td>
 												<td className="py-2 px-2 text-gray-900 dark:text-white">
-													{txn.type === 'CREDIT' ? '+' : '-'}${Math.abs(txn.amount)}
+													{txn.amount >= 0 ? '+' : '-'}${Math.abs(txn.amount)}
 												</td>
 												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">{txn.description}</td>
 												<td className="py-2 px-2 text-gray-600 dark:text-gray-400">
