@@ -28,7 +28,7 @@
 % Header and footer
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{DSCPMS Testing Documentation}
+\fancyhead[L]{Rikugan Testing Documentation}
 \fancyhead[R]{Version 1.0}
 \fancyfoot[C]{\thepage}
 
@@ -42,22 +42,44 @@
 % Title Page
 \begin{titlepage}
     \centering
-    \vspace*{2cm}
+    \vspace*{1.5cm}
     
     {\Huge\bfseries Testing Documentation\\[0.5cm]}
-    {\LARGE Demon Slayer Corps Project Management System (DSCPMS)\\[2cm]}
+    {\LARGE Rikugan Project Management System\\[1.5cm]}
     
     \begin{tabular}{ll}
         \textbf{Document Version:} & 1.0 \\
-        \textbf{Last Updated:} & December 22, 2025 \\
-        \textbf{Backend Framework:} & Jest + Supertest \\
-        \textbf{Frontend Framework:} & User Requirement Testing \\
-        \textbf{Node.js Version:} & 16+ \\
+        \textbf{Printing Date:} & \today \\[0.5cm]
+        \textbf{Group ID:} & Group 9 \\[0.5cm]
     \end{tabular}
     
-    \vfill
+    \vspace{1cm}
     
-    {\large \today}
+    \begin{flushleft}
+    \textbf{Group Members:}\\[0.3cm]
+    \begin{tabular}{ll}
+        1155211784 & Fok Chun Yin \\
+        1155211541 & HO Sum Ming \\
+        1155211779 & Chi Ho KWOK \\
+        1155211479 & NG Ka Long \\
+        1155214295 & SIN Lok Man \\
+    \end{tabular}
+    \end{flushleft}
+    
+    \vspace{1.5cm}
+    
+    \begin{flushleft}
+    \textbf{Revision History:}\\[0.3cm]
+    \begin{tabular}{|l|l|l|p{6cm}|}
+    \hline
+    \textbf{Version} & \textbf{Date} & \textbf{Author} & \textbf{Description} \\
+    \hline
+    1.0 & December 22, 2025 & Group 9 & Initial release \\
+    \hline
+    \end{tabular}
+    \end{flushleft}
+    
+    \vfill
 \end{titlepage}
 
 % Table of Contents
@@ -66,302 +88,87 @@
 
 \section{Test Plan Overview}
 
-\subsection{Purpose}
-This test plan outlines the comprehensive testing strategy for the DSCPMS, encompassing both backend unit testing and frontend user requirement testing to ensure system reliability, security, and compliance with functional requirements specified in the Software Requirements Specification (SRS).
+This document outlines the testing strategy for DSCPMS, covering backend API testing (Jest + Supertest) and frontend user requirement validation. The test suite ensures system reliability, security, and compliance with SRS functional requirements.
 
-\subsection{Scope}
-
-\subsubsection{Backend Testing (Unit \& Integration Tests)}
-The backend testing covers:
+\subsection{Testing Scope}
 \begin{itemize}
-    \item RESTful API endpoints
-    \item Authentication and authorization mechanisms
-    \item Database operations and data integrity
-    \item Business logic in service layer
+    \item RESTful API endpoints and authentication
+    \item Database operations and transaction integrity
     \item Role-based access control (RBAC)
-    \item License validation system
-    \item Bounty reward and penalty mechanisms
-    \item Team management functionality
-\end{itemize}
-
-\subsubsection{Frontend Testing (User Requirement Tests)}
-The frontend testing covers:
-\begin{itemize}
-    \item User interface functionality and workflows
-    \item User requirement validation
-    \item End-to-end user scenarios
-    \item Compliance with SRS functional requirements
-\end{itemize}
-
-\subsection{Testing Objectives}
-\begin{itemize}
-    \item Verify all functional requirements from SRS are implemented correctly
-    \item Ensure data security and proper authentication/authorization
-    \item Validate business rules and constraints
-    \item Test error handling and edge cases
-    \item Confirm database integrity and transaction handling
-    \item Validate API response formats and status codes
-\end{itemize}
-
-\subsection{Test Deliverables}
-\begin{itemize}
-    \item Automated test suites for all major components
-    \item Test coverage reports (target: 70\%+ for critical paths)
-    \item Test execution logs and results
-    \item Bug reports and resolution tracking
+    \item License validation and team management
+    \item Bounty system and business logic
 \end{itemize}
 
 \newpage
 \section{Testing Strategy}
 
-\subsection{Testing Approach}
+\subsection{Backend Testing}
 
-\subsubsection{Backend Unit Testing}
-\textbf{Purpose:} Test backend API, business logic, and data layer in isolation
-
-\textbf{Scope:}
+\subsubsection{Unit Testing}
 \begin{itemize}
-    \item Individual API endpoints and controllers
-    \item Service layer business logic
-    \item Database operations and models
-    \item Middleware components
-    \item Authentication and authorization
-    \item Utility functions
+    \item \textbf{Framework:} Jest
+    \item \textbf{Scope:} Individual components, services, utilities, and models in isolation
+    \item \textbf{Approach:} Mock external dependencies, test business logic, validate data transformations
+    \item \textbf{Coverage:} Service layer functions, utility functions, model methods
 \end{itemize}
 
-\textbf{Approach:}
+\subsubsection{Integration Testing}
 \begin{itemize}
-    \item Mock external dependencies (database, services)
-    \item Test API endpoints with Supertest
-    \item Validate request/response formats
-    \item Test error handling and edge cases
-    \item Verify data integrity and transactions
-    \item Test security mechanisms (JWT, password hashing)
+    \item \textbf{Framework:} Jest + Supertest
+    \item \textbf{Scope:} API endpoints, database operations, component interactions
+    \item \textbf{Approach:} Test complete request-response cycles, validate database transactions, verify middleware chains
+    \item \textbf{Coverage:} RESTful API endpoints, authentication flows, database integrity, inter-service communication
 \end{itemize}
 
-\textbf{Tools:} Jest + Supertest
+\subsection{Frontend Testing}
 
-\textbf{Coverage Target:} 70\%+ for critical paths
-
-\subsubsection{Frontend User Requirement Testing}
-\textbf{Purpose:} Validate that the frontend meets user requirements and SRS specifications
-
-\textbf{Scope:}
+\subsubsection{Validation Testing}
 \begin{itemize}
-    \item User workflows and scenarios from SRS
-    \item Functional requirements validation
-    \item User interface interactions
-    \item End-to-end user journeys
-    \item Role-based feature access
+    \item \textbf{Approach:} Manual testing and user acceptance testing (UAT)
+    \item \textbf{Scope:} User interface workflows, form validations, SRS requirement compliance
+    \item \textbf{Coverage:} User requirement validation, end-to-end scenarios, role-based feature access
+    \item \textbf{Focus:} Input validation, error messages, user feedback, navigation flows
 \end{itemize}
 
-\textbf{Approach:}
+\subsection{Overall Metrics}
 \begin{itemize}
-    \item Manual testing against SRS requirements
-    \item User acceptance testing (UAT)
-    \item Scenario-based testing
-    \item Role-based workflow validation
-    \item Requirement traceability verification
-\end{itemize}
-
-\textbf{Tools:} Manual testing, requirement checklists
-
-\textbf{Coverage Target:} 100\% of SRS functional requirements
-
-\subsection{Testing Types}
-
-\subsubsection{Functional Testing}
-Tests that verify system behavior matches requirements:
-\begin{itemize}
-    \item User registration and authentication
-    \item Task creation, assignment, and lifecycle
-    \item Bounty calculation and distribution
-    \item License validation and team management
-    \item Notification generation
-\end{itemize}
-
-\subsubsection{Security Testing}
-Tests that verify system security:
-\begin{itemize}
-    \item Password hashing (bcrypt)
-    \item JWT token generation and validation
-    \item Authorization checks for protected routes
-    \item SQL injection prevention
-    \item Input validation and sanitization
-\end{itemize}
-
-\subsubsection{Negative Testing}
-Tests that verify system handles invalid inputs:
-\begin{itemize}
-    \item Invalid credentials
-    \item Malformed requests
-    \item Unauthorized access attempts
-    \item Expired tokens
-    \item Invalid data formats
-\end{itemize}
-
-\subsubsection{Data Integrity Testing}
-Tests that verify database consistency:
-\begin{itemize}
-    \item Foreign key constraints
-    \item Unique constraints
-    \item Transaction rollbacks
-    \item Cascade deletions
+    \item \textbf{Coverage Target:} 70\%+ for critical paths (currently 86\%)
+    \item \textbf{Test Types:} Functional, security, negative testing, and data integrity validation
 \end{itemize}
 
 \newpage
-\section{Test Coverage}
+\section{Test Coverage Summary}
 
-\subsection{Components Covered}
-
-\subsubsection{Authentication System (auth.test.js)}
-\textbf{Coverage:} >90\%
-
-\textbf{Test Count:} 41 test cases
-
-\textbf{Key Areas:}
-\begin{itemize}
-    \item User registration with role selection and validation
-    \item User login with JWT token generation (8-hour expiration)
-    \item Team assignment validation and no\_team flag
-    \item License validation on protected routes
-    \item Password hashing and change password functionality
-    \item Role-based authorization (GOON/HASHIRA/OYAKATASAMA)
-    \item Token authentication middleware
-    \item JWT payload structure validation
-\end{itemize}
-
-\subsubsection{Task Management System (tasks.test.js)}
-\textbf{Coverage:} >85\%
-
-\textbf{Test Count:} 24 test cases
-
-\textbf{Key Areas:}
-\begin{itemize}
-    \item Task creation (Hashira/Oyakatasama only)
-    \item Task assignment to Goons
-    \item Task status updates
-    \item Kanban board retrieval
-    \item Task deletion
-    \item Deadline validation
-    \item License limit enforcement (3 task limit without license)
-\end{itemize}
-
-\subsubsection{License Management System (license.test.js)}
-\textbf{Coverage:} >90\%
-
-\textbf{Test Count:} 47 test cases
-
-\textbf{Key Areas:}
-\begin{itemize}
-    \item License validation from environment config
-    \item Team creation with license keys
-    \item License expiration checks
-    \item User limit enforcement
-    \item Task limit enforcement (3 tasks without valid license)
-    \item License renewal and revocation
-\end{itemize}
-
-\subsubsection{User Management (user.test.js)}
-\textbf{Coverage:} >70\%
-
-\textbf{Test Count:} 43 test cases
-
-\textbf{Key Areas:}
-\begin{itemize}
-    \item User CRUD operations with role-based authorization
-    \item Profile updates and validation (email, username uniqueness)
-    \item User status management (active/inactive)
-    \item Balance precision and tracking
-    \item Security testing (SQL injection, XSS, password exclusion)
-    \item Edge case handling (concurrent updates, null values, invalid IDs)
-\end{itemize}
-
-\subsubsection{Bounty System (bounty.test.js)}
-\textbf{Coverage:} >90\%
-
-\textbf{Test Count:} 14 test cases
-
-\textbf{Key Areas:}
-\begin{itemize}
-    \item Bounty calculation
-    \item Automatic reward distribution
-    \item Penalty application for missed deadlines
-    \item Balance updates
-    \item Audit log creation
-    \item Transaction integrity
-\end{itemize}
-
-\subsubsection{Notification System (notifications.test.js)}
-\textbf{Coverage:} >90\%
-
-\textbf{Test Count:} 10 optimized test cases (reduced from 41 while maintaining >90\% coverage)
-
-\textbf{Key Areas:}
-\begin{itemize}
-    \item Multi-type notification creation with validation
-    \item User isolation and authorization
-    \item Bulk operations and cleanup
-    \item Database error handling
-    \item Notification types: TASK\_ASSIGNED, BOUNTY\_RECEIVED, PENALTY\_APPLIED, DEADLINE\_REMINDER, LICENSE\_EXPIRING, TASK\_DELETED, TASK\_COMPLETED
-\end{itemize}
-
-\subsubsection{Team Management (team.test.js)}
-\textbf{Coverage:} \textasciitilde{}71\%
-
-\textbf{Test Count:} 20 test cases
-
-\textbf{Key Areas:}
-\begin{itemize}
-    \item Team creation with license
-    \item Team member addition/removal
-    \item Team-based resource isolation
-    \item Team license assignment
-    \item Team deletion and cascade effects
-\end{itemize}
-
-\subsubsection{Database Connection (database.test.js)}
-\textbf{Coverage:} \textasciitilde{}100\%
-
-\textbf{Test Count:} 49 test cases
-
-\textbf{Key Areas:}
-\begin{itemize}
-    \item Database connectivity
-    \item Model synchronization
-    \item Transaction handling
-    \item Connection pooling
-    \item Model validations and constraints
-    \item Foreign key relationships
-    \item Cascade operations
-\end{itemize}
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Component} & \textbf{Tests} & \textbf{Coverage} \\
+\hline
+Authentication (auth.test.js) & 41 & >90\% \\
+Task Management (tasks.test.js) & 24 & >85\% \\
+License System (license.test.js) & 47 & >90\% \\
+User Management (user.test.js) & 43 & >70\% \\
+Bounty System (bounty.test.js) & 14 & >90\% \\
+Notifications (notifications.test.js) & 10 & >90\% \\
+Team Management (team.test.js) & 20 & \textasciitilde{}71\% \\
+Database (database.test.js) & 49 & \textasciitilde{}100\% \\
+\hline
+\textbf{Total} & \textbf{248} & \textbf{\textasciitilde{}86\%} \\
+\hline
+\end{tabular}
 
 \newpage
 \section{Core Test Cases}
 
-\textbf{Note:} This section contains only the most critical test cases. Complete test suite has 248 tests across 8 test files.
+\textbf{Note:} Complete test suite (248 tests) available in \texttt{backend/\_\_tests\_\_/} directory.
 
-\textbf{For additional test cases:} See the \texttt{backend/\_\_tests\_\_/} directory in the source code for the complete test suite implementation. Each test file contains comprehensive test coverage including edge cases, error handling, and integration scenarios not documented here.
+\subsection{Authentication (auth.test.js)}
 
-\subsection{Authentication System (auth.test.js)}
-
-\subsubsection{TEST-AUTH-001: User Registration with team\_id=NULL}
+\subsubsection{TEST-AUTH-001: User Registration}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/auth.test.js}
     \item \textbf{Endpoint:} \texttt{POST /api/v1/auth/register}
-    \item \textbf{Objective:} Verify new users register with team\_id=NULL as per registration flow
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} New users register with team\_id=NULL, password hashing, role assignment
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item HTTP 201 Created response
-    \item User created successfully
-    \item \texttt{team\_id} field is NULL
-    \item Response includes user ID and username
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const res = await request(app)
   .post('/api/v1/auth/register')
@@ -374,26 +181,14 @@ const res = await request(app)
 
 expect(res.statusCode).toBe(201);
 expect(res.body.success).toBe(true);
-expect(res.body.data).toHaveProperty('id');
 \end{lstlisting}
 
-\subsubsection{TEST-AUTH-002: Login with No Team (no\_team Flag)}
+\subsubsection{TEST-AUTH-002: Login with No Team Flag}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/auth.test.js}
     \item \textbf{Endpoint:} \texttt{POST /api/v1/auth/login}
-    \item \textbf{Objective:} Verify login returns no\_team flag when user has no team
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} JWT token generation, no\_team flag when teamId is null
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item HTTP 200 Success
-    \item JWT token returned
-    \item \texttt{no\_team} flag set to true
-    \item User object shows teamId as null
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const res = await request(app)
   .post('/api/v1/auth/login')
@@ -403,25 +198,15 @@ const res = await request(app)
   });
 
 expect(res.statusCode).toBe(200);
-expect(res.body.data).toHaveProperty('token');
 expect(res.body.data.no_team).toBe(true);
 \end{lstlisting}
 
-\subsubsection{TEST-AUTH-003: Login Rejected for Expired License}
+\subsubsection{TEST-AUTH-003: Expired License Rejection}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/auth.test.js}
     \item \textbf{Endpoint:} \texttt{POST /api/v1/auth/login}
-    \item \textbf{Objective:} Prevent login when user's team has expired license
-    \item \textbf{Priority:} Critical | \textbf{Category:} Security Testing
+    \item \textbf{Validates:} Login blocked for expired team licenses (HTTP 403)
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item HTTP 403 Forbidden
-    \item Error message indicates license expiration
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const res = await request(app)
   .post('/api/v1/auth/login')
@@ -431,7 +216,6 @@ const res = await request(app)
   });
 
 expect(res.statusCode).toBe(403);
-expect(res.body.success).toBe(false);
 expect(res.body.message).toMatch(/license|expired/i);
 \end{lstlisting}
 
@@ -439,20 +223,10 @@ expect(res.body.message).toMatch(/license|expired/i);
 
 \subsubsection{TEST-TASK-001: Task Creation by HASHIRA}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/tasks.test.js}
     \item \textbf{Endpoint:} \texttt{POST /api/v1/tasks}
-    \item \textbf{Objective:} Verify HASHIRA role can create tasks with bounty
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} HASHIRA/OYAKATASAMA can create tasks with bounty
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item HTTP 201 Created
-    \item Task created in database with bounty amount
-    \item Task visible to team members
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const res = await request(app)
   .post('/api/v1/tasks')
@@ -468,50 +242,30 @@ expect(res.statusCode).toBe(201);
 expect(res.body.success).toBe(true);
 \end{lstlisting}
 
-\subsubsection{TEST-TASK-002: Task Creation Rejected for GOON}
+\subsubsection{TEST-TASK-002: GOON Role Restriction}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/tasks.test.js}
     \item \textbf{Endpoint:} \texttt{POST /api/v1/tasks}
-    \item \textbf{Objective:} Verify GOON role cannot create tasks
-    \item \textbf{Priority:} High | \textbf{Category:} Security Testing
+    \item \textbf{Validates:} GOON role cannot create tasks (HTTP 403)
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item HTTP 403 Forbidden
-    \item No task created in database
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const res = await request(app)
   .post('/api/v1/tasks')
   .set('Authorization', `Bearer ${goonToken}`)
   .send({
     title: 'Test Task',
-    description: 'Task description',
-    bountyAmount: 100.00
+    description: 'Task description'
   });
 
 expect(res.statusCode).toBe(403);
 \end{lstlisting}
 
-\subsubsection{TEST-TASK-003: Task Assignment to Goons}
+\subsubsection{TEST-TASK-003: Task Assignment}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/tasks.test.js}
     \item \textbf{Endpoint:} \texttt{POST /api/v1/tasks/:id/assign}
-    \item \textbf{Objective:} Verify tasks can be assigned to GOON users
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} Task assignment, status update, notification creation
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Task assigned to specified user
-    \item \texttt{assignedTo} field populated correctly
-    \item Notification sent to assigned user
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const res = await request(app)
   .post(`/api/v1/tasks/${taskId}/assign`)
@@ -521,100 +275,27 @@ expect(res.statusCode).toBe(200);
 expect(res.body.data.status).toBe('IN_PROGRESS');
 \end{lstlisting}
 
-\subsubsection{TEST-TASK-004: Kanban Board Retrieval}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/tasks.test.js}
-    \item \textbf{Endpoint:} \texttt{GET /api/v1/tasks/board}
-    \item \textbf{Objective:} Verify tasks are grouped by status for Kanban view
-    \item \textbf{Priority:} Medium | \textbf{Category:} Functional Testing
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Tasks grouped by AVAILABLE, IN\_PROGRESS, COMPLETED
-    \item Only team-specific tasks returned
-    \item Proper filtering by status
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const res = await request(app)
-  .get('/api/v1/tasks/board')
-  .set('Authorization', `Bearer ${goonToken}`);
-
-expect(res.statusCode).toBe(200);
-expect(res.body.data).toHaveProperty('available');
-expect(res.body.data).toHaveProperty('inProgress');
-\end{lstlisting}
-
-\subsubsection{TEST-TASK-005: Task Status Update by Assigned User}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/tasks.test.js}
-    \item \textbf{Endpoint:} \texttt{PUT /api/v1/tasks/:id/status}
-    \item \textbf{Objective:} Verify assigned users can update task status
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item HTTP 200 Success
-    \item Status updated in database
-    \item Status change notification created
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const res = await request(app)
-  .put(`/api/v1/tasks/${taskId}/status`)
-  .set('Authorization', `Bearer ${goonToken}`)
-  .send({ status: 'COMPLETED' });
-
-expect(res.statusCode).toBe(200);
-expect(res.body.data.status).toBe('COMPLETED');
-\end{lstlisting}
-
 \subsection{License System (license.test.js)}
 
-\subsubsection{TEST-LICENSE-001: Valid License Key Validation}
+\subsubsection{TEST-LICENSE-001: Valid License Validation}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/license.test.js}
-    \item \textbf{Objective:} Verify valid license keys from environment are accepted
-    \item \textbf{Priority:} Critical | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} Environment-configured license keys accepted
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Validation returns \texttt{valid: true}
-    \item License configuration includes max\_users and expiration
-    \item License key matches environment config
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const result = await LicenseService.validateForTeamCreation(
   'RIKUGAN-2025-VALID-KEY-A'
 );
 
 expect(result.valid).toBe(true);
-expect(result.config).toBeDefined();
 expect(result.config.max_users).toBe(50);
 \end{lstlisting}
 
-\subsubsection{TEST-LICENSE-002: Invalid License Key Rejected}
+\subsubsection{TEST-LICENSE-002: Invalid License Rejection}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/license.test.js}
-    \item \textbf{Objective:} Reject license keys not in environment configuration
-    \item \textbf{Priority:} Critical | \textbf{Category:} Security Testing
+    \item \textbf{Validates:} Unknown license keys rejected
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Validation returns \texttt{valid: false}
-    \item Error message indicates invalid license
-    \item Team creation blocked
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const result = await LicenseService.validateForTeamCreation(
   'INVALID-KEY-12345'
@@ -624,21 +305,11 @@ expect(result.valid).toBe(false);
 expect(result.error).toMatch(/invalid|not found/i);
 \end{lstlisting}
 
-\subsubsection{TEST-LICENSE-003: Expired License Key Rejected}
+\subsubsection{TEST-LICENSE-003: Expiration Enforcement}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/license.test.js}
-    \item \textbf{Objective:} Prevent use of expired licenses
-    \item \textbf{Priority:} Critical | \textbf{Category:} Security Testing
+    \item \textbf{Validates:} Expired licenses blocked (HTTP 403)
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Validation detects expiry\_date in the past
-    \item License marked as invalid
-    \item HTTP 403 when attempting to use expired license
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const result = await LicenseService.validateForTeamCreation(
   'RIKUGAN-TEST-2025-EXPIRED'
@@ -648,49 +319,12 @@ expect(result.valid).toBe(false);
 expect(result.error).toMatch(/expired/i);
 \end{lstlisting}
 
-\subsubsection{TEST-LICENSE-004: License Assignment to Team}
+\subsubsection{TEST-LICENSE-004: User Limit Enforcement}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/license.test.js}
-    \item \textbf{Endpoint:} \texttt{POST /api/v1/teams/create}
-    \item \textbf{Objective:} Verify license is bound to team during creation
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} Teams cannot exceed max\_users limit
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item License record created in database
-    \item License.teamId matches created team
-    \item License status set to active
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
-const license = await License.findOne({ 
-  where: { teamId: team.id } 
-});
-
-expect(license).toBeDefined();
-expect(license.teamId).toBe(team.id);
-expect(license.isActive).toBe(true);
-\end{lstlisting}
-
-\subsubsection{TEST-LICENSE-005: User Limit Enforcement}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/license.test.js}
-    \item \textbf{Objective:} Prevent teams from exceeding license user limit
-    \item \textbf{Priority:} High | \textbf{Category:} Business Logic
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Team can add users up to max\_users limit
-    \item Attempting to exceed limit returns HTTP 403
-    \item Error message indicates license limit reached
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-// Attempt to add user beyond max_users limit
 const res = await request(app)
   .post(`/api/v1/teams/${teamId}/members`)
   .set('Authorization', `Bearer ${adminToken}`)
@@ -700,23 +334,12 @@ expect(res.statusCode).toBe(403);
 expect(res.body.message).toMatch(/user limit/i);
 \end{lstlisting}
 
-\subsubsection{TEST-LICENSE-006: Task Limit Enforcement}
+\subsubsection{TEST-LICENSE-005: Task Limit (Unlicensed)}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/license.test.js}
-    \item \textbf{Objective:} Limit task creation to 3 for unlicensed teams
-    \item \textbf{Priority:} High | \textbf{Category:} Business Logic
+    \item \textbf{Validates:} 3-task limit for teams without valid license
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Unlicensed teams limited to 3 tasks
-    \item Licensed teams have no task limit
-    \item HTTP 403 when limit exceeded
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
-// Try creating 4th task without license
 const res = await request(app)
   .post('/api/v1/tasks')
   .set('Authorization', `Bearer ${hashiraToken}`)
@@ -728,47 +351,11 @@ expect(res.body.message).toMatch(/task limit/i);
 
 \subsection{Bounty System (bounty.test.js)}
 
-\subsubsection{TEST-BOUNTY-001: User Balance Retrieval}
+\subsubsection{TEST-BOUNTY-001: Automatic Reward Distribution}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/bounty.test.js}
-    \item \textbf{Endpoint:} \texttt{GET /api/v1/bounties/statistics}
-    \item \textbf{Objective:} Retrieve user's current bounty balance
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} Bounty awarded on task completion, balance update
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item HTTP 200 Success
-    \item Current balance returned
-    \item Balance reflects all completed transactions
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const res = await request(app)
-  .get('/api/v1/bounties/statistics')
-  .set('Authorization', `Bearer ${userToken}`);
-
-expect(res.statusCode).toBe(200);
-expect(res.body.success).toBe(true);
-\end{lstlisting}
-
-\subsubsection{TEST-BOUNTY-002: Automatic Reward Distribution}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/bounty.test.js}
-    \item \textbf{Objective:} Verify bounty is awarded when task is completed
-    \item \textbf{Priority:} High | \textbf{Category:} Business Logic
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Task completion triggers bounty transaction
-    \item User balance increased by bounty amount
-    \item Transaction record created with type='BOUNTY'
-    \item Audit log entry created
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 await request(app)
   .put(`/api/v1/tasks/${taskId}/status`)
@@ -783,24 +370,12 @@ expect(transaction).toBeDefined();
 expect(transaction.amount).toBe(bountyAmount);
 \end{lstlisting}
 
-\subsubsection{TEST-BOUNTY-003: Penalty Application for Missed Deadlines}
+\subsubsection{TEST-BOUNTY-002: Penalty Application}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/bounty.test.js}
-    \item \textbf{Objective:} Apply penalties when tasks miss deadlines
-    \item \textbf{Priority:} High | \textbf{Category:} Business Logic
+    \item \textbf{Validates:} Penalties for missed deadlines, negative transactions
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Penalty calculated based on business rules
-    \item User balance decreased
-    \item Transaction record created with type='PENALTY'
-    \item Negative amount recorded
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
-// Task with past deadline
 const penalty = await Transaction.findOne({ 
   where: { taskId, type: 'PENALTY' } 
 });
@@ -812,23 +387,12 @@ expect(user.balance).toBeLessThan(initialBalance);
 
 \subsection{Team Management (team.test.js)}
 
-\subsubsection{TEST-TEAM-001: Team Creation with License}
+\subsubsection{TEST-TEAM-001: Team Creation}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/team.test.js}
     \item \textbf{Endpoint:} \texttt{POST /api/v1/teams/create}
-    \item \textbf{Objective:} Create team with valid license key
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} Team created with license, creator as OYAKATASAMA
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item HTTP 201 Created
-    \item Team created with license binding
-    \item Creator assigned as OYAKATASAMA
-    \item License status set to active
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const response = await request(app)
   .post('/api/v1/teams/create')
@@ -842,73 +406,11 @@ expect(response.status).toBe(200);
 expect(response.body.success).toBe(true);
 \end{lstlisting}
 
-\subsubsection{TEST-TEAM-002: Team Member Addition}
+\subsubsection{TEST-TEAM-002: Resource Isolation}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/team.test.js}
-    \item \textbf{Endpoint:} \texttt{POST /api/v1/teams/:id/members}
-    \item \textbf{Objective:} Add users to existing team
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} Users can only access their team's resources
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item User's teamId updated to team ID
-    \item User can access team resources
-    \item User included in team member list
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const res = await request(app)
-  .post(`/api/v1/teams/${teamId}/members`)
-  .set('Authorization', `Bearer ${adminToken}`)
-  .send({ userId: newUserId });
-
-expect(res.statusCode).toBe(200);
-expect(res.body.success).toBe(true);
-\end{lstlisting}
-
-\subsubsection{TEST-TEAM-003: Team Member Removal}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/team.test.js}
-    \item \textbf{Endpoint:} \texttt{DELETE /api/v1/teams/:id/members/:userId}
-    \item \textbf{Objective:} Remove users from team
-    \item \textbf{Priority:} Medium | \textbf{Category:} Functional Testing
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item User's teamId set to NULL
-    \item User loses access to team resources
-    \item Tasks assigned to user are handled appropriately
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const res = await request(app)
-  .delete(`/api/v1/teams/${teamId}/members/${userId}`)
-  .set('Authorization', `Bearer ${adminToken}`);
-
-expect(res.statusCode).toBe(200);
-const user = await User.findByPk(userId);
-expect(user.teamId).toBeNull();
-\end{lstlisting}
-
-\subsubsection{TEST-TEAM-004: Team-Based Resource Isolation}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/team.test.js}
-    \item \textbf{Objective:} Verify users can only access resources from their team
-    \item \textbf{Priority:} Critical | \textbf{Category:} Security Testing
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Users can only view/modify tasks in their team
-    \item Team members list filtered by team
-    \item Cross-team data access prevented
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const res = await request(app)
   .get('/api/v1/tasks')
@@ -918,78 +420,13 @@ const tasks = res.body.data;
 expect(tasks.every(t => t.teamId === team1Id)).toBe(true);
 \end{lstlisting}
 
-\subsubsection{TEST-TEAM-005: Team Deletion with Cascade}
+\subsection{Notifications (notifications.test.js)}
+
+\subsubsection{TEST-NOTIF-001: Multi-Type Creation}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/team.test.js}
-    \item \textbf{Endpoint:} \texttt{DELETE /api/v1/teams/:id}
-    \item \textbf{Objective:} Handle team deletion and dependent resources
-    \item \textbf{Priority:} Medium | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} All notification types (TASK\_ASSIGNED, BOUNTY\_RECEIVED, etc.)
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Team marked as inactive or deleted
-    \item Associated license deactivated
-    \item Team members' teamId set to NULL
-    \item Tasks handled according to business rules
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const res = await request(app)
-  .delete(`/api/v1/teams/${teamId}`)
-  .set('Authorization', `Bearer ${adminToken}`);
-
-expect(res.statusCode).toBe(200);
-const team = await Team.findByPk(teamId);
-expect(team).toBeNull(); // or expect(team.isActive).toBe(false)
-\end{lstlisting}
-
-\subsection{User Management (user.test.js)}
-
-\subsubsection{TEST-USER-001: User Profile Retrieval}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/user.test.js}
-    \item \textbf{Endpoint:} \texttt{GET /api/v1/users}
-    \item \textbf{Objective:} Retrieve authenticated user's profile
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item HTTP 200 Success
-    \item User profile data returned
-    \item Balance and team information included
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const res = await request(app)
-  .get('/api/v1/users')
-  .set('Authorization', `Bearer ${adminToken}`);
-
-expect(res.statusCode).toBe(200);
-expect(res.body.success).toBe(true);
-expect(Array.isArray(res.body.data)).toBe(true);
-\end{lstlisting}
-
-\subsection{Notification System (notifications.test.js)}
-
-\subsubsection{TEST-NOTIF-001: Multi-Type Notification Creation with Validation}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/notifications.test.js}
-    \item \textbf{Objective:} Create notifications of different types with proper validation
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item All notification types created successfully
-    \item Proper message formatting for each type
-    \item Validation enforced for required fields
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const taskNotif = await NotificationService.createNotification(
   testUser1.id, 'TASK_ASSIGNED',
@@ -1002,31 +439,11 @@ expect(taskNotif.title).toBe('New Task Assigned');
 expect(taskNotif.readStatus).toBe(false);
 \end{lstlisting}
 
-\subsubsection{TEST-NOTIF-002: Notification Retrieval with Filtering}
+\subsubsection{TEST-NOTIF-002: User Isolation}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/notifications.test.js}
-    \item \textbf{Objective:} Retrieve notifications with filtering and user isolation
-    \item \textbf{Priority:} High | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} Users only see their own notifications
 \end{itemize}
 
-\textbf{Coverage:}
-\begin{itemize}
-    \item Retrieve all user notifications
-    \item Filter unread-only notifications
-    \item Chronological ordering (newest first)
-    \item User isolation (cross-user access prevention)
-    \item Empty array for users with no notifications
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Only authenticated user's notifications returned
-    \item Unread filter correctly excludes read notifications
-    \item Notifications sorted by created\_at DESC
-    \item Empty array (not null/error) for new users
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 const notifs = await NotificationService.getUserNotifications(
   testUser1.id, { unreadOnly: true }
@@ -1036,121 +453,13 @@ expect(Array.isArray(notifs)).toBe(true);
 expect(notifs.every(n => !n.readStatus)).toBe(true);
 \end{lstlisting}
 
-\subsubsection{TEST-NOTIF-003: Unread Count in Multiple Scenarios}
+\subsection{Database (database.test.js)}
+
+\subsubsection{TEST-DB-001: Connection Health}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/notifications.test.js}
-    \item \textbf{Objective:} Accurate unread notification counting across edge cases
-    \item \textbf{Priority:} Medium | \textbf{Category:} Functional Testing
+    \item \textbf{Validates:} MySQL connection established
 \end{itemize}
 
-\textbf{Coverage:}
-\begin{itemize}
-    \item Count with mixed read/unread notifications
-    \item Zero count when all notifications read
-    \item Zero count for users with no notifications
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Accurate count of unread notifications
-    \item Returns 0 (not null) for edge cases
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const count = await NotificationService.getUnreadCount(
-  testUser1.id
-);
-
-expect(typeof count).toBe('number');
-expect(count).toBeGreaterThanOrEqual(0);
-\end{lstlisting}
-
-\subsubsection{TEST-NOTIF-004: Mark as Read with Authorization}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/notifications.test.js}
-    \item \textbf{Objective:} Single notification mark-as-read with security checks
-    \item \textbf{Priority:} High | \textbf{Category:} Security \& Functional Testing
-\end{itemize}
-
-\textbf{Coverage:}
-\begin{itemize}
-    \item Successfully mark notification as read
-    \item Database persistence verification
-    \item Idempotent operation (marking already-read notification)
-    \item Reject non-existent notification
-    \item Reject unauthorized user access
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item readStatus updated to true and persisted
-    \item Idempotent (no error when marking twice)
-    \item Throws 'Notification not found' for invalid ID or unauthorized access
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const result = await NotificationService.markAsRead(
-  notificationId, testUser1.id
-);
-
-expect(result).toBe(true);
-const notif = await Notification.findByPk(notificationId);
-expect(notif.readStatus).toBe(true);
-\end{lstlisting}
-
-\subsubsection{TEST-NOTIF-005: Bulk Mark All as Read with User Isolation}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/notifications.test.js}
-    \item \textbf{Objective:} Bulk update operation with proper user isolation
-    \item \textbf{Priority:} Medium | \textbf{Category:} Functional Testing
-\end{itemize}
-
-\textbf{Coverage:}
-\begin{itemize}
-    \item Mark all user notifications as read
-    \item User isolation (only affects target user)
-    \item Idempotent bulk operation
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item All target user notifications marked read
-    \item Other users' notifications unaffected
-    \item Returns true for successful operation
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const result = await NotificationService.markAllAsRead(
-  testUser1.id
-);
-
-expect(result).toBe(true);
-const unreadCount = await NotificationService.getUnreadCount(
-  testUser1.id
-);
-expect(unreadCount).toBe(0);
-\end{lstlisting}
-
-\subsection{Database Tests (database.test.js)}
-
-\subsubsection{TEST-DB-001: Database Connection Health}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/database.test.js}
-    \item \textbf{Objective:} Verify database connection is established
-    \item \textbf{Priority:} Critical | \textbf{Category:} Infrastructure Testing
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Connection to MySQL database successful
-    \item Database accessible for queries
-    \item No connection errors
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 await sequelize.authenticate();
 
@@ -1158,43 +467,11 @@ expect(sequelize).toBeDefined();
 expect(sequelize.options.database).toBe('dscpms_test');
 \end{lstlisting}
 
-\subsubsection{TEST-DB-002: Connection Pool Management}
+\subsubsection{TEST-DB-002: Transaction Rollback}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/database.test.js}
-    \item \textbf{Objective:} Verify connection pooling works correctly
-    \item \textbf{Priority:} High | \textbf{Category:} Infrastructure Testing
+    \item \textbf{Validates:} Failed transactions rollback completely
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Multiple concurrent connections handled
-    \item Connections released back to pool
-    \item No connection leaks
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const pool = sequelize.connectionManager.pool;
-
-expect(pool).toBeDefined();
-expect(pool.max).toBeGreaterThan(0);
-\end{lstlisting}
-
-\subsubsection{TEST-DB-003: Transaction Handling}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/database.test.js}
-    \item \textbf{Objective:} Verify database transactions rollback on error
-    \item \textbf{Priority:} High | \textbf{Category:} Data Integrity
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Failed transactions rolled back completely
-    \item Database state remains consistent
-    \item No partial updates committed
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 try {
   await sequelize.transaction(async (t) => {
@@ -1207,22 +484,11 @@ try {
 }
 \end{lstlisting}
 
-\subsubsection{TEST-DB-004: Model Validations}
+\subsubsection{TEST-DB-003: Model Validations}
 \begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/database.test.js}
-    \item \textbf{Objective:} Verify model-level validations are enforced
-    \item \textbf{Priority:} High | \textbf{Category:} Validation Testing
+    \item \textbf{Validates:} Email format, required fields, enum values
 \end{itemize}
 
-\textbf{Expected Results:}
-\begin{itemize}
-    \item Email format validation enforced
-    \item Required fields cannot be null
-    \item Enum values validated (e.g., role, status)
-    \item Custom validators execute correctly
-\end{itemize}
-
-\textbf{Test Code:}
 \begin{lstlisting}[language=JavaScript]
 try {
   await User.create({ username: 'test', email: 'invalid' });
@@ -1231,183 +497,52 @@ try {
 }
 \end{lstlisting}
 
-\subsubsection{TEST-DB-005: Default Values}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/database.test.js}
-    \item \textbf{Objective:} Verify default values are set correctly
-    \item \textbf{Priority:} Medium | \textbf{Category:} Functional Testing
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item User.role defaults to 'GOON'
-    \item User.balance defaults to 0
-    \item User.isActive defaults to true
-    \item Timestamps (created\_at, updated\_at) auto-generated
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const user = await User.create({
-  username: 'defaulttest',
-  email: 'default@test.com',
-  password: 'Test123!'
-});
-
-expect(user.role).toBe('GOON');
-expect(user.balance).toBe(0);
-expect(user.isActive).toBe(true);
-\end{lstlisting}
-
-\subsubsection{TEST-DB-006: Timestamp Management}
-\begin{itemize}[label={}]
-    \item \textbf{Test File:} \texttt{backend/\_\_tests\_\_/database.test.js}
-    \item \textbf{Objective:} Verify automatic timestamp creation and updates
-    \item \textbf{Priority:} Low | \textbf{Category:} Functional Testing
-\end{itemize}
-
-\textbf{Expected Results:}
-\begin{itemize}
-    \item created\_at set on record creation
-    \item updated\_at updated on record modification
-    \item Timestamps accurate to current time
-\end{itemize}
-
-\textbf{Test Code:}
-\begin{lstlisting}[language=JavaScript]
-const user = await User.create({ username: 'timestamp' });
-const createdAt = user.createdAt;
-
-await user.update({ email: 'new@test.com' });
-
-expect(user.updatedAt).not.toEqual(createdAt);
-\end{lstlisting}
-
 \newpage
 \section{Testing Environment}
 
-\subsection{Docker Setup (Required)}
+\subsection{Docker Setup}
+All tests run inside Docker containers for database connectivity and environment consistency.
 
-\textbf{IMPORTANT:} All tests must be run inside Docker containers to ensure proper database connectivity and environment consistency.
-
-\subsubsection{Prerequisites}
-\begin{itemize}
-    \item Docker and Docker Compose installed
-    \item All containers started via Docker Compose
-\end{itemize}
-
-\subsubsection{Setup Steps}
-
-\textbf{1. Start the Docker environment:}
+\textbf{Start environment:}
 \begin{lstlisting}[language=bash]
-# Navigate to project root
-cd c:\Users\user\Documents\GitHub\3100
-
-# Start database and backend containers
 docker-compose up -d database backend
-\end{lstlisting}
-
-\textbf{2. Verify containers are running:}
-\begin{lstlisting}[language=bash]
-docker ps
-# Should show: dscpms-database and dscpms-backend containers
-\end{lstlisting}
-
-\textbf{3. Create test database (one-time setup):}
-\begin{lstlisting}[language=bash]
 docker exec dscpms-database mysql -u root -proot -e "CREATE DATABASE IF NOT EXISTS dscpms_test;"
 \end{lstlisting}
 
-\subsection{Test Execution}
-
-\textbf{CRITICAL:} Tests must be executed inside the Docker backend container, NOT on the host machine.
-
-\subsubsection{Run Individual Test Suites}
+\textbf{Run tests:}
 \begin{lstlisting}[language=bash]
-# Auth tests
+# All tests
+docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- --forceExit"
+
+# Individual suite
 docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- auth.test.js --forceExit"
 
-# Task tests
-docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- tasks.test.js --forceExit"
-
-# License tests
-docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- license.test.js --forceExit"
-
-# Bounty tests
-docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- bounty.test.js --forceExit"
-
-# User tests
-docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- user.test.js --forceExit"
-
-# Notification tests
-docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- notifications.test.js --forceExit"
-
-# Team tests
-docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- team.test.js --forceExit"
-
-# Database tests
-docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- database.test.js --forceExit"
-\end{lstlisting}
-
-\subsubsection{Run All Tests}
-\begin{lstlisting}[language=bash]
-docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- --forceExit"
-\end{lstlisting}
-
-\subsubsection{Run Tests with Coverage}
-\begin{lstlisting}[language=bash]
+# With coverage
 docker exec dscpms-backend bash -c "NODE_ENV=test npm test -- --coverage --forceExit"
 \end{lstlisting}
 
-\subsection{Test Database Configuration}
-
-The test database is automatically configured via environment variables in the Docker container:
-
-\begin{itemize}
-    \item \textbf{Database Name:} dscpms\_test
-    \item \textbf{Host:} database (Docker container name)
-    \item \textbf{Port:} 3306
-    \item \textbf{Username:} root
-    \item \textbf{Password:} root
-\end{itemize}
-
-\textbf{Note:} The test database is separate from the development database to prevent data corruption during testing.
+\textbf{Test Database:} dscpms\_test (MySQL, host: database, port: 3306, user: root)
 
 \newpage
-\section{Test Results Summary}
+\section{Test Results}
 
-\subsection{Overall Test Statistics}
+\subsection{Statistics}
 \begin{itemize}
-    \item \textbf{Total Tests:} 248
-    \item \textbf{Passing Tests:} 248 (100\%)
-    \item \textbf{Code Coverage:} \textasciitilde{}86\% overall
-    \begin{itemize}
-        \item Authentication: \textasciitilde{}90\%
-        \item Tasks: \textasciitilde{}85\%
-        \item License: \textasciitilde{}90\%
-        \item User: \textasciitilde{}70\%
-        \item Bounty: \textasciitilde{}90\%
-        \item Notifications: \textasciitilde{}90\% (10 comprehensive tests)
-        \item Team: \textasciitilde{}71\%
-        \item Database: \textasciitilde{}100\%
-    \end{itemize}
-    \item \textbf{Average Test Execution Time:} 8-18 seconds
+    \item \textbf{Total:} 248 tests (100\% passing)
+    \item \textbf{Coverage:} \textasciitilde{}86\% overall
+    \item \textbf{Execution Time:} 8-18 seconds
 \end{itemize}
 
 \subsection{Quality Gates}
-Before merging code:
 \begin{itemize}
-    \item[$\checkmark$] All tests must pass
-    \item[$\checkmark$] No decrease in code coverage
+    \item[$\checkmark$] All tests pass
+    \item[$\checkmark$] No coverage decrease
     \item[$\checkmark$] No new ESLint errors
     \item[$\checkmark$] API documentation updated
-    \item[$\checkmark$] Test cases added for new features
 \end{itemize}
 
 \section{Conclusion}
 
-The DSCPMS backend testing strategy provides comprehensive coverage of critical functionality through automated unit and integration tests. The test suite validates all major requirements from the SRS, ensures security through authentication and authorization tests, and maintains data integrity through database transaction testing.
-
-The current test coverage of 86\% exceeds the target of 70\% for critical paths, with key components like authentication, license management, bounty system, and notifications achieving over 90\% coverage. The testing framework is well-structured, maintainable, and provides confidence in system reliability.
+The Rikugan test suite provides 86\% coverage across 248 tests, validating authentication, authorization, license management, bounty system, and database integrity. All major SRS requirements are tested with comprehensive security and business logic validation.
 
 \end{document}
