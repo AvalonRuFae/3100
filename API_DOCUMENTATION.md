@@ -440,6 +440,30 @@ Authorization: Bearer <token>
 
 ### Examples
 
+#### Get Bounty Statistics
+```bash
+GET /api/v1/bounty/statistics
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalBountiesPaid": 15750.00,
+    "totalPenaltiesApplied": 450.00,
+    "totalTransactions": 87,
+    "averageBountyAmount": 425.50,
+    "transactionsByType": {
+      "BOUNTY": 37,
+      "PENALTY": 9,
+      "ADJUSTMENT": 5
+    }
+  }
+}
+```
+
 #### Get User Transactions
 ```bash
 GET /api/v1/bounty/transactions/1
@@ -594,6 +618,95 @@ Authorization: Bearer <token>
       "createdAt": "2025-12-20T15:00:00.000Z"
     }
   ]
+}
+```
+
+#### Get Notifications (Unread Only)
+```bash
+GET /api/v1/notifications?unread=true
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 10,
+      "type": "TASK_ASSIGNED",
+      "title": "New Task Assigned",
+      "message": "You have been assigned: Implement User Authentication API",
+      "isRead": false,
+      "createdAt": "2025-12-21T10:30:00.000Z"
+    }
+  ]
+}
+```
+
+#### Get Unread Count
+```bash
+GET /api/v1/notifications/unread
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "count": 3
+  }
+}
+```
+
+#### Mark Notification as Read
+```bash
+PUT /api/v1/notifications/10/read
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Notification marked as read",
+  "data": {
+    "id": 10,
+    "type": "TASK_ASSIGNED",
+    "title": "New Task Assigned",
+    "message": "You have been assigned: Implement User Authentication API",
+    "isRead": true,
+    "createdAt": "2025-12-21T10:30:00.000Z"
+  }
+}
+```
+
+#### Mark All Notifications as Read
+```bash
+PUT /api/v1/notifications/mark-all-read
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "All notifications marked as read"
+}
+```
+
+#### Delete Notification
+```bash
+DELETE /api/v1/notifications/10
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Notification deleted"
 }
 ```
 

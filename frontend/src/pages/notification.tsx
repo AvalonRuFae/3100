@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { NotificationIcon } from "@/components/icons";
+const baseApiUrl = "http://localhost:3000/api/v1";
 
 interface NotificationItem {
 	id: number;
@@ -9,7 +10,7 @@ interface NotificationItem {
 	type: string;
 	message: string;
 	relatedId: number;
-	isRead: boolean;
+	readStatus: boolean;
 	createdAt: string;
 }
 
@@ -20,7 +21,7 @@ const mockNotifications: NotificationItem[] = [
 		type: "TASK_ASSIGNED",
 		message: "You have been assigned a new task!",
 		relatedId: 101,
-		isRead: false,
+		readStatus: false,
 		createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
 	},
 	{
@@ -29,7 +30,7 @@ const mockNotifications: NotificationItem[] = [
 		type: "BOUNTY_COMPLETED",
 		message: "Your bounty has been completed!",
 		relatedId: 102,
-		isRead: true,
+		readStatus: true,
 		createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
 	},
 	{
@@ -38,7 +39,7 @@ const mockNotifications: NotificationItem[] = [
 		type: "DEADLINE_REMINDER",
 		message: "A task deadline is approaching soon.",
 		relatedId: 103,
-		isRead: false,
+		readStatus: false,
 		createdAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(),
 	},
 ];
@@ -48,16 +49,38 @@ const Notification: React.FC<{ user: any }> = ({ user }) => {
 	const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 	const [searchTerm, setSearchTerm] = useState("");
 	const [expandedId, setExpandedId] = useState<number | null>(null);
+	const [loading, setLoading] = useState(false);
+
+	// Fetch notifications from backend
+	const fetchNotifications = async (unreadOnly = false) => {
+		setLoading(true);
+		try {
+			const token = localStorage.getItem("token");
+			const url = `${baseApiUrl}/notifications?${unreadOnly ? "unread=true" : ""}`;
+			const res = await fetch(url, {
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			const data = await res.json();
+			if (res.ok && data.success) {
+				setNotifications(data.data);
+			} else {
+				setNotifications([]);
+			}
+		} catch {
+			setNotifications([]);
+		}
+		setLoading(false);
+	};
 
 	useEffect(() => {
-		// Replace with API call
-		setNotifications(mockNotifications);
-	}, [user]);
+		fetchNotifications(showUnreadOnly);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user, showUnreadOnly]);
 
-	const unreadCount = notifications.filter((n) => !n.isRead).length;
+	const unreadCount = notifications.filter((n) => !n.readStatus).length;
 
 	const filteredNotifications = notifications.filter((n) => {
-		if (showUnreadOnly && n.isRead) return false;
+		if (showUnreadOnly && n.readStatus) return false;
 		if (
 			searchTerm &&
 			!n.message.toLowerCase().includes(searchTerm.toLowerCase())
@@ -66,23 +89,54 @@ const Notification: React.FC<{ user: any }> = ({ user }) => {
 		return true;
 	});
 
-	const handleMarkAsRead = (id: number) => {
-		setNotifications((prev) =>
-			prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-		);
+	// Mark a notification as read (API)
+	const handleMarkAsRead = async (id: number) => {
+		try {
+			console.log("Marking as read:", id);
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${baseApiUrl}/notifications/${id}/read`, {
+				method: "PUT",
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			console.log("Marked as read, ok?", res.ok);
+			if (res.ok) {
+				fetchNotifications(showUnreadOnly);
+			}
+		} catch {}
 	};
 
-	const handleMarkAllAsRead = () => {
-		setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+	// Mark all notifications as read (API)
+	const handleMarkAllAsRead = async () => {
+		try {
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${baseApiUrl}/notifications/read-all`, {
+				method: "PATCH",
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			if (res.ok) {
+				setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+			}
+		} catch {}
 	};
 
-	const handleDelete = (id: number) => {
-		setNotifications((prev) => prev.filter((n) => n.id !== id));
+	// Delete a notification (API)
+	const handleDelete = async (id: number) => {
+		try {
+			const token = localStorage.getItem("token");
+			const res = await fetch(`${baseApiUrl}/notifications/${id}`, {
+				method: "DELETE",
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			if (res.ok) {
+				setNotifications((prev) => prev.filter((n) => n.id !== id));
+			}
+		} catch {}
 	};
 
-	const handleExpand = (notification: NotificationItem) => {
+	// Expand notification and mark as read if unread
+	const handleExpand = async (notification: NotificationItem) => {
 		setExpandedId(expandedId === notification.id ? null : notification.id);
-		if (!notification.isRead) handleMarkAsRead(notification.id);
+		if (!notification.readStatus) await handleMarkAsRead(notification.id);
 	};
 
 	return (
@@ -142,7 +196,7 @@ const Notification: React.FC<{ user: any }> = ({ user }) => {
 								<div key={n.id}>
 									<div
 										className={`flex items-center px-4 py-3 cursor-pointer transition group ${
-											!n.isRead
+											!n.readStatus
 												? "bg-primary-50 dark:bg-primary-900/30 font-semibold border-l-4 border-primary-500"
 												: "hover:bg-gray-100 dark:hover:bg-gray-900"
 										}`}
@@ -154,7 +208,7 @@ const Notification: React.FC<{ user: any }> = ({ user }) => {
 												<span className="truncate">
 													{n.type.replace(/_/g, " ")}
 												</span>
-												{!n.isRead && (
+												{!n.readStatus && (
 													<span className="ml-2 px-2 py-0.5 rounded-full bg-primary-500 text-white text-xs font-semibold">
 														New
 													</span>
@@ -179,7 +233,7 @@ const Notification: React.FC<{ user: any }> = ({ user }) => {
 												>
 													Delete
 												</Button>
-												{!n.isRead && (
+												{!n.readStatus && (
 													<Button
 														size="sm"
 														variant="light"
@@ -210,7 +264,7 @@ const Notification: React.FC<{ user: any }> = ({ user }) => {
 												>
 													Close
 												</Button>
-												{!n.isRead && (
+												{!n.readStatus && (
 													<Button
 														color="primary"
 														onClick={() => handleMarkAsRead(n.id)}
