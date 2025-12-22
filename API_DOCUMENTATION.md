@@ -676,7 +676,7 @@ Authorization: Bearer <token>
     "type": "TASK_ASSIGNED",
     "title": "New Task Assigned",
     "message": "You have been assigned: Implement User Authentication API",
-    "isRead": true,
+    "readStatus": true,
     "createdAt": "2025-12-21T10:30:00.000Z"
   }
 }
