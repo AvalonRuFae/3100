@@ -872,7 +872,9 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 				<ModalContent>
 					<ModalHeader>Confirm Assignment</ModalHeader>
 					<ModalBody>
-						Are you sure you want to assign this task to <b>{assignSelectedUser?.username}</b>?
+						<p>
+							Are you sure you want to assign this task to <b>{assignSelectedUser?.username}</b>?
+						</p>
 					</ModalBody>
 					<ModalFooter>
 						<Button variant="light" onPress={() => setShowConfirmAssign(false)}>
@@ -913,7 +915,9 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 				<ModalContent>
 					<ModalHeader>Confirm Status Change</ModalHeader>
 					<ModalBody>
-						Are you sure you want to set this task to <b>Completed</b>?
+						<p>
+							Are you sure you want to set this task to <b>Completed</b>?
+						</p>
 						{pendingStatusTask && (
 							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
 								<strong>{pendingStatusTask.bounty.title}</strong>
@@ -936,7 +940,9 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 				<ModalContent>
 					<ModalHeader>Confirm Status Change</ModalHeader>
 					<ModalBody>
-						Are you sure you want to set this task to <b>Review</b>?
+						<p>
+							Are you sure you want to set this task to <b>Review</b>?
+						</p>
 						{pendingStatusTask && (
 							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
 								<strong>{pendingStatusTask.bounty.title}</strong>
@@ -959,7 +965,9 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 				<ModalContent>
 					<ModalHeader>Confirm Status Change</ModalHeader>
 					<ModalBody>
-						Are you sure you want to set this task to <b>Available</b>? This will unassign the user.
+						<p>
+							Are you sure you want to set this task to <b>Available</b>? This will unassign the user.
+						</p>
 						{pendingStatusTask && (
 							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
 								<strong>{pendingStatusTask.bounty.title}</strong>
@@ -982,7 +990,9 @@ const TaskManagement: React.FC<{ user: any }> = ({ user }) => {
 				<ModalContent>
 					<ModalHeader>Confirm Delete</ModalHeader>
 					<ModalBody>
-						Are you sure you want to delete this task?
+						<p>
+							Are you sure you want to delete this task?
+						</p>
 						{pendingDeleteTask && (
 							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
 								<strong>{pendingDeleteTask.title}</strong>

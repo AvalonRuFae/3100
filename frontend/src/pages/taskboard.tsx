@@ -513,7 +513,9 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 				<ModalContent>
 					<ModalHeader>Confirm Take Task</ModalHeader>
 					<ModalBody>
-						Are you sure you want to take this task?
+						<p>
+							Are you sure you want to take this task?
+						</p>
 						{pendingTakeBounty && (
 							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
 								<strong>{pendingTakeBounty.title}</strong>
@@ -536,7 +538,9 @@ const Taskboard: React.FC<{ user: any }> = ({ user }) => {
 				<ModalContent>
 					<ModalHeader>Confirm Status Change</ModalHeader>
 					<ModalBody>
-						Are you sure you want to set this task to <b>In Review</b>?
+						<p>
+							Are you sure you want to set this task to <b>In Review</b>?
+						</p>
 						{pendingReviewTask && (
 							<div className="mt-2 text-sm text-gray-700 dark:text-gray-200">
 								<strong>{pendingReviewTask.title}</strong>

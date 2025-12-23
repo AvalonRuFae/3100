@@ -33,7 +33,7 @@ const limiter = rateLimit({
   }
 });
 
-// app.use('/api', limiter);
+app.use('/api', limiter);
 
 // Body parser middleware
 app.use(express.json());
